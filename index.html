@@ -981,9 +981,7 @@
         <header>
             <div class="header-content">
                 <div class="folder-selector">
-                    <button id="prevBtn">← Previous</button>
-                    <span class="current-folder" id="currentFolder">Select a folder</span>
-                    <button id="nextBtn">Next →</button>
+                    <span class="current-folder" id="currentFolder">Task Manager</span>
                 </div>
                 <div class="stats-bar">
                     <div class="stat-item">
@@ -1004,89 +1002,161 @@
 
         <div class="main-content">
             <aside class="sidebar">
+                <h3>Search</h3>
                 <div class="filter-section">
                     <div class="search-box">
                         <input type="text" id="searchInput" placeholder="Search tasks...">
                     </div>
                 </div>
+
+                <h3>Filters</h3>
+
                 <div class="filter-section">
-                    <h3>Status</h3>
-                    <div class="checkbox-group" id="statusFilter">
-                        <label><input type="checkbox" value="pending"> Pending</label>
-                        <label><input type="checkbox" value="done"> Done</label>
-                        <label><input type="checkbox" value="in-progress"> In Progress</label>
-                        <label><input type="checkbox" value="important"> Important</label>
+                    <label>Status</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" class="status-filter" value="pending" checked>
+                            Pending
+                        </label>
+                        <label>
+                            <input type="checkbox" class="status-filter" value="done" checked>
+                            Done
+                        </label>
+                        <label>
+                            <input type="checkbox" class="status-filter" value="cancelled" checked>
+                            Cancelled
+                        </label>
+                        <label>
+                            <input type="checkbox" class="status-filter" value="in-progress" checked>
+                            In Progress
+                        </label>
+                        <label>
+                            <input type="checkbox" class="status-filter" value="important" checked>
+                            Important
+                        </label>
                     </div>
                 </div>
+
                 <div class="filter-section">
-                    <h3>Tags</h3>
-                    <div class="tag-cloud" id="tagCloud"></div>
+                    <label>Priority</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" class="priority-filter" value="high" checked>
+                            High
+                        </label>
+                        <label>
+                            <input type="checkbox" class="priority-filter" value="medium" checked>
+                            Medium
+                        </label>
+                        <label>
+                            <input type="checkbox" class="priority-filter" value="low" checked>
+                            Low
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <label>Date Range</label>
+                    <input type="date" id="fromDate" placeholder="From">
+                    <input type="date" id="toDate" placeholder="To" style="margin-top: 8px;">
+                </div>
+
+                <div class="filter-section">
+                    <label>View Mode</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="radio" name="viewMode" value="list" checked>
+                            List View
+                        </label>
+                        <label>
+                            <input type="radio" name="viewMode" value="timeline">
+                            Timeline View
+                        </label>
+                    </div>
+                </div>
+
+                <h3>Tags</h3>
+                <div class="filter-section">
+                    <div class="tag-cloud" id="tagCloud">
+                        <!-- Tags will be populated here -->
+                    </div>
                 </div>
             </aside>
 
             <div class="task-area">
                 <div class="bulk-actions" id="bulkActions">
-                    <span class="bulk-actions-info" id="bulkInfo"></span>
+                    <div class="bulk-actions-info">
+                        <span id="bulkSelectCount">0 items selected</span>
+                    </div>
                     <div class="bulk-actions-buttons">
-                        <button onclick="markSelectedDone()" class="btn-primary">Mark Done</button>
-                        <button onclick="deleteSelected()" class="btn-secondary">Delete</button>
+                        <button id="bulkCompleteBtn">Mark as Done</button>
+                        <button id="bulkDeleteBtn">Delete</button>
+                        <button id="bulkTagBtn">Change Tag</button>
                     </div>
                 </div>
 
                 <div class="task-header">
-                    <h2>Tasks</h2>
+                    <h2 id="taskTitle">Tasks</h2>
                     <div class="task-actions">
-                        <button onclick="toggleAddForm()" class="btn-primary">+ Add Task</button>
-                        <button onclick="switchView('list')" class="btn-secondary">List</button>
-                        <button onclick="switchView('timeline')" class="btn-secondary">Timeline</button>
+                        <button id="addTaskBtn">+ New Task</button>
+                        <button id="refreshBtn">Refresh</button>
                     </div>
                 </div>
 
                 <div class="add-task-form" id="addTaskForm">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Task Title</label>
-                            <input type="text" id="taskTitle" placeholder="Enter task title">
+                            <label>Task Title *</label>
+                            <input type="text" id="taskTitleInput" placeholder="What needs to be done?" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Status</label>
-                            <select id="taskStatus">
+                            <select id="taskStatusInput">
                                 <option value="pending">Pending</option>
                                 <option value="in-progress">In Progress</option>
                                 <option value="done">Done</option>
-                                <option value="important">Important</option>
+                                <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Due Date</label>
-                            <input type="date" id="taskDueDate">
+                            <label>Priority</label>
+                            <select id="taskPriorityInput">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="taskDueInput">
+                        </div>
+                        <div class="form-group">
                             <label>Tags</label>
-                            <input type="text" id="taskTags" placeholder="Enter tags separated by commas">
+                            <input type="text" id="taskTagsInput" placeholder="Separate with commas">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea id="taskDescription" placeholder="Enter task description"></textarea>
+                            <textarea id="taskDescInput" placeholder="Add notes..."></textarea>
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button onclick="toggleAddForm()" class="btn-secondary">Cancel</button>
-                        <button onclick="addTask()" class="btn-primary">Add Task</button>
+                        <button class="btn-secondary" id="cancelAddBtn">Cancel</button>
+                        <button class="btn-primary" id="saveTaskBtn">Save Task</button>
                     </div>
                 </div>
 
                 <div class="task-list" id="taskList">
-                    <div class="empty-state">
-                        <h3>No tasks found</h3>
-                        <p>Click "+ Add Task" to create your first task</p>
-                    </div>
+                    <!-- Tasks will be populated here -->
+                </div>
+
+                <div class="timeline-view" id="timelineView" style="display: none;">
+                    <!-- Timeline will be populated here -->
                 </div>
             </div>
         </div>
@@ -1094,114 +1164,31 @@
 
     <div class="message" id="message"></div>
 
-    <script>
-        // Simple task management system
-        let tasks = [];
-        let currentView = 'list';
-
-        function showMessage(text, type = 'info') {
-            const msg = document.getElementById('message');
-            msg.textContent = text;
-            msg.className = `message ${type} show`;
-            setTimeout(() => msg.classList.remove('show'), 3000);
-        }
-
-        function toggleAddForm() {
-            const form = document.getElementById('addTaskForm');
-            form.classList.toggle('active');
-        }
-
-        function addTask() {
-            const title = document.getElementById('taskTitle').value;
-            if (!title) {
-                showMessage('Please enter a task title', 'error');
-                return;
-            }
-
-            const task = {
-                id: Date.now(),
-                title,
-                status: document.getElementById('taskStatus').value,
-                dueDate: document.getElementById('taskDueDate').value,
-                tags: document.getElementById('taskTags').value.split(',').map(t => t.trim()).filter(t => t),
-                description: document.getElementById('taskDescription').value,
-                completed: false
-            };
-
-            tasks.push(task);
-            renderTasks();
-            toggleAddForm();
-            document.getElementById('taskTitle').value = '';
-            document.getElementById('taskStatus').value = 'pending';
-            document.getElementById('taskDueDate').value = '';
-            document.getElementById('taskTags').value = '';
-            document.getElementById('taskDescription').value = '';
-            showMessage('Task added successfully', 'success');
-        }
-
-        function renderTasks() {
-            const taskList = document.getElementById('taskList');
-            if (tasks.length === 0) {
-                taskList.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No tasks found</h3>
-                        <p>Click "+ Add Task" to create your first task</p>
-                    </div>
-                `;
-                return;
-            }
-
-            taskList.innerHTML = tasks.map(task => `
-                <div class="task-item status-${task.status}">
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
-                           onchange="toggleTask(${task.id})">
-                    <div class="task-content">
-                        <div class="task-text ${task.completed ? 'status-done' : ''}">${task.title}</div>
-                        <div class="task-meta">
-                            ${task.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
-                            ${task.dueDate ? `<span class="task-due">${task.dueDate}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="task-item-actions">
-                        <button onclick="deleteTask(${task.id})">Delete</button>
-                    </div>
+    <div class="tag-replace-modal" id="tagReplaceModal">
+        <div class="tag-replace-content">
+            <div class="tag-replace-header">
+                <h3>Change Tag</h3>
+            </div>
+            <div class="tag-replace-options">
+                <div class="replace-option">
+                    <label>Old Tag</label>
+                    <input type="text" id="oldTag" disabled>
                 </div>
-            `).join('');
+                <div class="replace-option">
+                    <label>New Tag</label>
+                    <input type="text" id="newTag" placeholder="Enter new tag">
+                </div>
+            </div>
+            <div class="replace-actions">
+                <button class="btn-secondary" onclick="closeTagReplaceModal()">Cancel</button>
+                <button class="btn-primary" onclick="applyTagReplace()">Replace</button>
+            </div>
+        </div>
+    </div>
 
-            updateStats();
-        }
-
-        function toggleTask(id) {
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                task.completed = !task.completed;
-                renderTasks();
-            }
-        }
-
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            renderTasks();
-            showMessage('Task deleted', 'success');
-        }
-
-        function updateStats() {
-            const total = tasks.length;
-            const done = tasks.filter(t => t.completed).length;
-            const pending = total - done;
-
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('doneCount').textContent = done;
-            document.getElementById('pendingCount').textContent = pending;
-        }
-
-        function switchView(view) {
-            currentView = view;
-            showMessage(`Switched to ${view} view`, 'info');
-        }
-
-        // Initialize
-        renderTasks();
+    <script>
+        // [JavaScript code will be here]
+        console.log('Task Manager loaded');
     </script>
 </body>
 </html>
