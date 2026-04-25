@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="browser" content="chrome">
+    <title>Obsidian Task Manager - Single Page</title>
+    <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: #e0e0e0;
+            --accent-color: #007acc;
+            --accent-hover: #005a9e;
+            --tag-bg: #e3f2fd;
+            --tag-color: #1976d2;
+            --tag-hover: #bbdefb;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            /* Dark mode colors */
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --text-muted: #707070;
+            --border-color: #2a2a4a;
+            --accent-color: #4fc3f7;
+            --accent-hover: #29b6f6;
+            --tag-bg: #1e3a5f;
+            --tag-color: #81d4fa;
+            --tag-hover: #2a4a7a;
+            --success-color: #66bb6a;
+            --warning-color: #ffb74d;
+            --error-color: #e57373;
+            --shadow: rgba(0,0,0,0.3);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg-primary: #1a1a2e;
+                --bg-secondary: #16213e;
+                --bg-tertiary: #0f3460;
+                --text-primary: #eaeaea;
+                --text-secondary: #a0a0a0;
+                --text-muted: #707070;
+                --border-color: #2a2a4a;
+                --accent-color: #4fc3f7;
+                --accent-hover: #29b6f6;
+                --tag-bg: #1e3a5f;
+                --tag-color: #81d4fa;
+                --tag-hover: #2a4a7a;
+                --success-color: #66bb6a;
+                --warning-color: #ffb74d;
+                --error-color: #e57373;
+                --shadow: rgba(0,0,0,0.3);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .folder-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .folder-selector button {
+            padding: 10px 20px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .folder-selector button:hover {
+            background: var(--accent-hover);
+        }
+
+        .folder-selector button:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .current-folder {
+            font-size: 14px;
+            color: var(--text-secondary);
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: var(--bg-tertiary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .status-info {
+            color: var(--accent-color);
+        }
+
+        .status-question {
+            color: #9c27b0;
+        }
+
+        .status-quote {
+            color: #e91e63;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow);
+            padding: 20px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .sidebar h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+        }
+
+        .filter-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .filter-section input,
+        .filter-section select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .filter-section select {
+            cursor: pointer;
+        }
+
+        .filter-section input:focus,
+        .filter-section select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--accent-color);
+        }
+
+        .tag-cloud {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .tag-pill {
+            background: var(--tag-bg);
+            color: var(--tag-color);
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-block;
+            margin: 1px 0;
+        }
+
+        .tag-pill:hover {
+            background: var(--tag-hover);
+        }
+
+        .tag-pill.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .tag-hierarchy-item {
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
+        }
+
+        .tag-hierarchy-item .tag-pill {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .tag-hierarchy-item .tag-pill:hover {
+            background: var(--tag-bg);
+            color: var(--tag-color);
+        }
+
+        .tag-hierarchy-item .tag-pill.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .task-area {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .task-header {
+            background: var(--bg-tertiary);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-header h2 {
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .task-actions button {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .task-actions button:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-color);
+        }
+
+        .task-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .task-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            transition: background-color 0.2s;
+        }
+
+        .task-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-item.selected {
+            background-color: rgba(79, 195, 247, 0.15);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+
+        .task-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-subitems {
+            margin-left: 24px;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--border-color);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .task-subitem {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            padding: 2px 0;
+        }
+
+        .task-status-icon {
+            font-size: 16px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .task-text {
+            font-size: 14px;
+            line-height: 1.4;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            color: var(--text-primary);
+        }
+
+        .task-text:hover {
+            background-color: var(--bg-primary);
+        }
+
+        .task-text.editing {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--accent-color);
+            outline: none;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .task-tag {
+            background: var(--tag-bg);
+            color: var(--tag-color);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .task-tag:hover {
+            background: var(--tag-hover);
+        }
+
+        .task-due {
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .task-due.overdue {
+            color: var(--error-color);
+            font-weight: 500;
+        }
+
+        .task-due.today {
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+
+        .task-file {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 11px;
+        }
+
+        .task-item-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .task-item:hover .task-item-actions {
+            opacity: 1;
+        }
+
+        .task-item-actions button {
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-primary);
+        }
+
+        .task-item-actions button:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-color);
+        }
+
+        .bulk-select-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .task-item.selected {
+            background-color: #e3f2fd;
+            border-left: 3px solid #1976d2;
+        }
+
+        .bulk-actions {
+            background: var(--bg-tertiary);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: none;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bulk-actions.active {
+            display: flex;
+        }
+
+        .bulk-actions-info {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .bulk-actions-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .bulk-actions button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .bulk-actions button:hover {
+            background: #f0f0f0;
+        }
+
+        .bulk-actions button.btn-primary {
+            background: #007acc;
+            color: white;
+            border-color: #007acc;
+        }
+
+        .bulk-actions button.btn-primary:hover {
+            background: #005a9e;
+        }
+
+        .tag-replace-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .tag-replace-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tag-replace-content {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .tag-replace-header {
+            margin-bottom: 20px;
+        }
+
+        .tag-replace-header h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .tag-replace-options {
+            margin-bottom: 20px;
+        }
+
+        .replace-option {
+            margin-bottom: 15px;
+        }
+
+        .replace-option label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .replace-option input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .replace-option input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .replace-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .status-pending { color: var(--text-secondary); }
+        .status-done { color: var(--success-color); text-decoration: line-through; }
+        .status-cancelled { color: var(--text-muted); text-decoration: line-through; }
+        .status-important { color: var(--warning-color); font-weight: 500; }
+        .status-in-progress { color: var(--accent-color); font-weight: 500; }
+        .status-info { color: #ba68c8; font-weight: 500; }
+
+        .timeline-view {
+            padding: 20px;
+        }
+
+        .timeline-category {
+            margin-bottom: 30px;
+        }
+
+        .timeline-category h3 {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .timeline-tasks {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-tasks::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-task {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .timeline-task::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            border: 3px solid var(--bg-secondary);
+        }
+
+        .timeline-task.completed::before {
+            background: var(--success-color);
+        }
+
+        .timeline-task.overdue::before {
+            background: var(--error-color);
+        }
+
+        .timeline-task-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .timeline-task-date {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            min-width: 90px;
+        }
+
+        .timeline-task-date.overdue {
+            color: var(--error-color);
+            font-weight: 600;
+        }
+
+        .timeline-task-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .timeline-task-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .timeline-task-tag {
+            background: var(--tag-bg);
+            color: var(--tag-color);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .search-box::after {
+            content: "🔍";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+        }
+
+        .add-task-form {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .add-task-form.active {
+            display: block;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .form-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-primary);
+        }
+
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            background: #fafafa;
+            margin: 20px 0;
+        }
+
+        .drop-zone.active {
+            border-color: #007acc;
+            background: #e3f2fd;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            max-width: 300px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+        }
+
+        .message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .message.success {
+            background: #4caf50;
+        }
+
+        .message.error {
+            background: #f44336;
+        }
+
+        .message.info {
+            background: #2196f3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+                gap: 10px;
+            }
+
+            /* Mobile: Search on top */
+            .sidebar {
+                order: 1;
+                padding: 15px;
+                max-height: none;
+            }
+
+            /* Hide filter sections by default on mobile, show via toggle */
+            .sidebar .filter-section:not(:first-child) {
+                display: none;
+            }
+
+            .sidebar .filter-section.show-mobile {
+                display: block;
+            }
+
+            .sidebar .filter-section:first-child {
+                margin-bottom: 10px;
+            }
+
+            .sidebar .filter-section:first-child h3 {
+                display: none;
+            }
+
+            .mobile-filter-toggle {
+                display: block !important;
+            }
+
+            .task-area {
+                order: 2;
+                min-height: 400px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .stats-bar {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stat-item {
+                flex: 1;
+                min-width: 60px;
+                justify-content: center;
+            }
+
+            .folder-selector {
+                width: 100%;
+            }
+
+            .folder-selector button {
+                flex: 1;
+            }
+
+            /* Mobile bulk actions */
+            .bulk-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .bulk-actions-info {
+                text-align: center;
+            }
+
+            .bulk-actions-buttons {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            /* Mobile task items */
+            .task-item {
+                padding: 12px 15px;
+            }
+
+            .task-item-actions {
+                opacity: 1;
+            }
+
+            .search-box input {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="folder-selector">
+                    <button id="selectAndLoadBtn" onclick="selectAndLoadTasks()">选择文件夹并加载任务</button>
+                    <div class="current-folder" id="currentFolder">未选择文件夹</div>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalTasks">0</span>
+                        <span>全部</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="pendingTasks">0</span>
+                        <span>待办</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="doneTasks">0</span>
+                        <span>完成</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="overdueTasks">0</span>
+                        <span>过期</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="filter-section">
+                    <h3>搜索</h3>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索任务..." oninput="filterTasks()">
+                    </div>
+                    <button class="mobile-filter-toggle" onclick="toggleMobileFilters()" style="display: none; margin-top: 10px; width: 100%; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--text-primary);">🔍 显示筛选选项</button>
+                    <select id="fileDateFilter" onchange="filterTasks()">
+                        <option value="all">文件日期: 全部</option>
+                        <option value="today">文件日期: 今天</option>
+                        <option value="week">文件日期: 本周</option>
+                        <option value="lastweek">文件日期: 上周</option>
+                        <option value="month">文件日期: 本月</option>
+                    </select>
+                    <select id="dueFilter" onchange="filterTasks()">
+                        <option value="all">截止日期: 全部</option>
+                        <option value="overdue">截止日期: 已过期</option>
+                        <option value="today">截止日期: 今天</option>
+                        <option value="week">截止日期: 本周</option>
+                        <option value="month">截止日期: 本月</option>
+                        <option value="future">截止日期: 未来</option>
+                        <option value="nodate">截止日期: 无日期</option>
+                    </select>
+                    <button onclick="resetAllFilters()" style="margin-top: 10px; width: 100%; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--text-primary); font-size: 12px;">🔄 重置所有筛选</button>
+                </div>
+
+                <div class="filter-section">
+                    <h3>状态</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" value=" " checked onchange="filterTasks()">
+                            <span>待办 [ ]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="x" checked onchange="filterTasks()">
+                            <span>完成 [x]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="*" checked onchange="filterTasks()">
+                            <span>星标 [*]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="-" checked onchange="filterTasks()">
+                            <span>取消 [-]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="!" checked onchange="filterTasks()">
+                            <span>重要 [!]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="/" checked onchange="filterTasks()">
+                            <span>进行中 [/]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="i" checked onchange="filterTasks()">
+                            <span>信息 [i]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="?" checked onchange="filterTasks()">
+                            <span>疑问 [?]</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" value="&quot;" checked onchange="filterTasks()">
+                            <span>引用 ["]</span>
+                        </label>
+                        <div style="margin-top: 8px;">
+                            <button onclick="selectAllStatus()" style="font-size: 12px; padding: 4px 8px;">全选</button>
+                            <button onclick="deselectAllStatus()" style="font-size: 12px; padding: 4px 8px; margin-left: 5px;">全不选</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>排序方式</h3>
+                    <select id="sortBy" onchange="filterTasks()">
+                        <option value="due">截止日期</option>
+                        <option value="status">状态</option>
+                        <option value="file">文件</option>
+                        <option value="text">任务内容</option>
+                        <option value="created">创建时间</option>
+                    </select>
+                </div>
+
+                <div class="filter-section">
+                    <h3>标签</h3>
+                    <div class="checkbox-group" style="margin-bottom: 10px;">
+                        <label>
+                            <input type="checkbox" id="includeSubTags" onchange="filterTasks()">
+                            <span>包含子标签</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="noTagsOnly" onchange="filterTasks()">
+                            <span>仅显示无标签</span>
+                        </label>
+                        <button onclick="selectAllTags()" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">全选</button>
+                        <button onclick="deselectAllTags()" style="font-size: 12px; padding: 4px 8px; margin-left: 5px;">全不选</button>
+                    </div>
+                    <div class="tag-cloud" id="tagCloud">
+                        <!-- 标签将动态生成 -->
+                    </div>
+                </div>
+            </aside>
+
+            <main class="task-area">
+                <div class="task-header">
+                    <h2 id="taskTitle">任务列表</h2>
+                    <div class="task-actions">
+                        <button onclick="toggleDarkMode()" id="darkModeToggle">🌙 暗黑模式</button>
+                        <button onclick="toggleTimelineView()">📅 时间线视图</button>
+                        <button onclick="toggleBulkSelect()">批量选择</button>
+                        <button onclick="toggleAddTaskForm()">添加任务</button>
+                        <button onclick="exportTasks()">导出</button>
+                        <button onclick="refreshTasks()">刷新</button>
+                    </div>
+                </div>
+
+                <div class="bulk-actions" id="bulkActions">
+                    <div class="bulk-actions-info">
+                        已选择 <span id="selectedCount">0</span> 个任务
+                    </div>
+                    <div class="bulk-actions-buttons">
+                        <button onclick="selectAllTasks()">全选</button>
+                        <button onclick="deselectAllTasks()">取消选择</button>
+                        <button class="btn-primary" onclick="showTagReplaceModal()">修改标签</button>
+                        <button onclick="deleteSelectedTasks()">删除任务</button>
+                        <button onclick="toggleBulkSelect()">退出批量模式</button>
+                    </div>
+                </div>
+
+                <div class="timeline-view" id="timelineView" style="display: none;">
+                    <!-- Timeline content will be generated here -->
+                </div>
+
+                <div class="add-task-form" id="addTaskForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>任务内容</label>
+                            <textarea id="newTaskText" placeholder="输入任务内容..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>状态</label>
+                            <select id="newTaskStatus">
+                                <option value=" ">待办 [ ]</option>
+                                <option value="x">完成 [x]</option>
+                                <option value="*">星标 [*]</option>
+                                <option value="-">取消 [-]</option>
+                                <option value="!">重要 [!]</option>
+                                <option value="/">进行中 [/]</option>
+                                <option value="i">信息 [i]</option>
+                                <option value="?">疑问 [?]</option>
+                                <option value="&quot;">引用 ["]</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>标签</label>
+                            <input type="text" id="newTaskTags" placeholder="用空格分隔，如: #work #urgent">
+                        </div>
+                        <div class="form-group">
+                            <label>截止日期</label>
+                            <input type="date" id="newTaskDue">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-secondary" onclick="toggleAddTaskForm()">取消</button>
+                        <button class="btn-primary" onclick="addNewTask()">添加</button>
+                    </div>
+                </div>
+
+                <div class="task-list" id="taskList">
+                    <div class="empty-state">
+                        <h3>请选择文件夹开始</h3>
+                        <p>点击"选择文件夹"按钮选择您的Obsidian仓库</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script>
+        let allTasks = [];
+        let filteredTasks = [];
+        let selectedTags = new Set();
+        let directoryHandle = null;
+        let fileHandles = new Map();
+        let selectedTasks = new Set();
+        let bulkSelectMode = false;
+        let timelineMode = false;
+
+        // 显示消息
+        function showMessage(text, type = 'info') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // 选择文件夹并加载任务
+        async function selectAndLoadTasks() {
+            if (!window.showDirectoryPicker) {
+                showMessage('您的浏览器不支持文件系统访问API，请使用Chrome、Edge等现代浏览器', 'error');
+                return;
+            }
+
+            try {
+                // Disable button during operation
+                const btn = document.getElementById('selectAndLoadBtn');
+                btn.disabled = true;
+                btn.textContent = '正在选择文件夹...';
+                
+                directoryHandle = await window.showDirectoryPicker();
+                document.getElementById('currentFolder').textContent = directoryHandle.name;
+                
+                btn.textContent = '正在加载任务...';
+                showMessage('正在加载任务...', 'info');
+                
+                // Load tasks immediately after folder selection
+                await loadTasksInternal();
+                
+                btn.textContent = '重新加载任务';
+                btn.disabled = false;
+                
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    showMessage('操作失败: ' + error.message, 'error');
+                }
+                
+                // Reset button
+                const btn = document.getElementById('selectAndLoadBtn');
+                btn.textContent = '选择文件夹并加载任务';
+                btn.disabled = false;
+            }
+        }
+
+        // 递归获取所有markdown文件
+        async function getAllMarkdownFiles(dirHandle, path = '') {
+            const files = [];
+            
+            for await (const entry of dirHandle.values()) {
+                const entryPath = path ? `${path}/${entry.name}` : entry.name;
+                
+                if (entry.kind === 'file' && entry.name.endsWith('.md')) {
+                    files.push({
+                        handle: entry,
+                        path: entryPath
+                    });
+                } else if (entry.kind === 'directory' && !entry.name.startsWith('.')) {
+                    try {
+                        const subDirHandle = await dirHandle.getDirectoryHandle(entry.name);
+                        const subFiles = await getAllMarkdownFiles(subDirHandle, entryPath);
+                        files.push(...subFiles);
+                    } catch (error) {
+                        console.warn(`无法访问目录 ${entryPath}:`, error);
+                    }
+                }
+            }
+            
+            return files;
+        }
+
+        // 解析任务行
+        function parseTaskLine(line, lineNumber, filePath) {
+            // Strip carriage return for Windows line endings
+            const cleanLine = line.replace(/\r$/, '');
+            const taskRegex = /^- \[([ x\*\-\/!i?\"])\]\s+(.+?)(?:\s+📅\s*(\d{4}-\d{2}-\d{2}))?(?:\s+⏳\s*(\d{4}-\d{2}-\d{2}))?\s*$/;
+            const match = cleanLine.match(taskRegex);
+            
+            if (!match) return null;
+            
+            const [, status, content, dueDate, scheduledDate] = match;
+            
+            // 提取标签（支持层级标签如 #s/events/finance）
+            const tagRegex = /#([\w\/]+)/g;
+            const tags = [];
+            let tagMatch;
+            while ((tagMatch = tagRegex.exec(content)) !== null) {
+                const fullTag = '#' + tagMatch[1];
+                tags.push(fullTag);
+            }
+            
+            // 移除标签和日期后的纯文本
+            const cleanContent = content.replace(/#[\w\/]+/g, '').replace(/\s+📅\s*\d{4}-\d{2}-\d{2}/g, '').replace(/\s+⏳\s*\d{4}-\d{2}-\d{2}/g, '').trim();
+            
+            return {
+                file: filePath,
+                lineNumber,
+                status,
+                text: cleanContent,
+                tags,
+                due: dueDate || null,
+                scheduled: scheduledDate || null,
+                subItems: [],
+                rawLine: cleanLine
+            };
+        }
+
+        // 加载所有任务 (内部函数)
+        async function loadTasksInternal() {
+            showMessage('正在加载任务...', 'info');
+            
+            try {
+                const mdFiles = await getAllMarkdownFiles(directoryHandle);
+                allTasks = [];
+                
+                for (const file of mdFiles) {
+                    try {
+                        const fileHandle = file.handle;
+                        const fileContent = await fileHandle.getFile();
+                        const text = await fileContent.text();
+                        const lines = text.split('\n');
+                        
+                        for (let index = 0; index < lines.length; index++) {
+                            const task = parseTaskLine(lines[index], index + 1, file.path);
+                            if (task) {
+                                // Capture indented sub-items
+                                const subItems = [];
+                                let subIndex = index + 1;
+                                while (subIndex < lines.length) {
+                                    const subLine = lines[subIndex].replace(/\r$/, ''); // Strip carriage return
+                                    // Check if line is indented (starts with tab or spaces) and not a task
+                                    if (/^[\t ]/.test(subLine) && !/^- \[/.test(subLine.trim())) {
+                                        subItems.push(subLine.trim().replace(/^[-\t ]+/, ''));
+                                        subIndex++;
+                                    } else if (subLine.trim() === '') {
+                                        subIndex++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                task.subItems = subItems;
+                                allTasks.push(task);
+                            }
+                        }
+                        
+                        fileHandles.set(file.path, fileHandle);
+                    } catch (error) {
+                        console.warn(`无法读取文件 ${file.path}:`, error);
+                    }
+                }
+                
+                filteredTasks = [...allTasks];
+                updateStats();
+                updateTagCloud();
+                filterTasks();
+                showMessage(`成功加载 ${allTasks.length} 个任务`, 'success');
+            } catch (error) {
+                showMessage('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const stats = {
+                total: filteredTasks.length,
+                pending: filteredTasks.filter(t => t.status === ' ').length,
+                done: filteredTasks.filter(t => t.status === 'x').length,
+                overdue: filteredTasks.filter(t => {
+                    if (t.status === 'x') return false;
+                    const effectiveDate = t.due || t.scheduled;
+                    if (!effectiveDate) return false;
+                    return new Date(effectiveDate) < today;
+                }).length
+            };
+
+            document.getElementById('totalTasks').textContent = stats.total;
+            document.getElementById('pendingTasks').textContent = stats.pending;
+            document.getElementById('doneTasks').textContent = stats.done;
+            document.getElementById('overdueTasks').textContent = stats.overdue;
+        }
+
+        // 更新标签云
+        function updateTagCloud() {
+            const tagCount = {};
+            allTasks.forEach(task => {
+                task.tags.forEach(tag => {
+                    tagCount[tag] = (tagCount[tag] || 0) + 1;
+                });
+            });
+
+            const tagCloud = document.getElementById('tagCloud');
+            tagCloud.innerHTML = '';
+            
+            // 构建标签层次结构
+            const tagHierarchy = {};
+            Object.entries(tagCount).forEach(([tag, count]) => {
+                const parts = tag.substring(1).split('/'); // 移除 # 并分割
+                let current = tagHierarchy;
+                parts.forEach((part, index) => {
+                    const currentTag = '#' + parts.slice(0, index + 1).join('/');
+                    if (!current[currentTag]) {
+                        current[currentTag] = {
+                            count: 0,
+                            children: {},
+                            level: index,
+                            name: currentTag
+                        };
+                    }
+                    current[currentTag].count += (index === parts.length - 1) ? count : 0;
+                    current = current[currentTag].children;
+                });
+            });
+
+            // 递归渲染标签层次
+            function renderTagLevel(hierarchy, container, level = 0) {
+                const sortedTags = Object.entries(hierarchy)
+                    .sort((a, b) => {
+                        // 先按层级排序，再按数量排序
+                        if (a[1].level !== b[1].level) return a[1].level - b[1].level;
+                        return b[1].count - a[1].count;
+                    });
+
+                sortedTags.forEach(([tag, data]) => {
+                    const tagEl = document.createElement('div');
+                    tagEl.style.marginLeft = `${data.level * 12}px`;
+                    tagEl.style.marginBottom = '4px';
+                    
+                    const tagPill = document.createElement('span');
+                    tagPill.className = 'tag-pill';
+                    tagPill.style.fontSize = `${14 - data.level * 1}px`;
+                    tagPill.style.opacity = `${1 - data.level * 0.1}`;
+                    tagPill.textContent = `${tag} (${data.count})`;
+                    tagPill.onclick = () => toggleTag(tag);
+                    
+                    tagEl.appendChild(tagPill);
+                    container.appendChild(tagEl);
+                    
+                    // 递归渲染子标签
+                    if (Object.keys(data.children).length > 0) {
+                        renderTagLevel(data.children, container, level + 1);
+                    }
+                });
+            }
+
+            renderTagLevel(tagHierarchy, tagCloud);
+        }
+
+        // 切换移动端筛选选项
+        function toggleMobileFilters() {
+            const filterSections = document.querySelectorAll('.sidebar .filter-section:not(:first-child)');
+            const btn = document.querySelector('.mobile-filter-toggle');
+            const isHidden = filterSections[0].style.display === 'none' || getComputedStyle(filterSections[0]).display === 'none';
+            
+            filterSections.forEach(section => {
+                section.classList.toggle('show-mobile', isHidden);
+            });
+            
+            btn.textContent = isHidden ? '🔍 隐藏筛选选项' : '🔍 显示筛选选项';
+        }
+
+// 重置所有筛选
+        function resetAllFilters() {
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            
+            // Reset file date filter
+            document.getElementById('fileDateFilter').value = 'all';
+            
+            // Reset due filter
+            document.getElementById('dueFilter').value = 'all';
+            
+            // Reset sort
+            document.getElementById('sortBy').value = 'due';
+            
+            // Reset all status checkboxes to checked
+            const filterSections = document.querySelectorAll('.filter-section');
+            filterSections.forEach(section => {
+                const heading = section.querySelector('h3');
+                if (heading && heading.textContent === '状态') {
+                    const checkboxes = section.querySelectorAll('.checkbox-group input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = true);
+                }
+            });
+            
+            // Clear all selected tags
+            selectedTags.clear();
+            updateTagCloudUI();
+            
+            // Uncheck includeSubTags
+            document.getElementById('includeSubTags').checked = false;
+            
+            // Uncheck noTagsOnly
+            document.getElementById('noTagsOnly').checked = false;
+            
+            // Apply filters
+            filterTasks();
+        }
+
+// 全选状态
+        function selectAllStatus() {
+            const filterSections = document.querySelectorAll('.filter-section');
+            filterSections.forEach(section => {
+                const heading = section.querySelector('h3');
+                if (heading && heading.textContent === '状态') {
+                    const checkboxes = section.querySelectorAll('.checkbox-group input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = true);
+                }
+            });
+            filterTasks();
+        }
+
+// 全不选状态
+        function deselectAllStatus() {
+            const filterSections = document.querySelectorAll('.filter-section');
+            filterSections.forEach(section => {
+                const heading = section.querySelector('h3');
+                if (heading && heading.textContent === '状态') {
+                    const checkboxes = section.querySelectorAll('.checkbox-group input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = false);
+                }
+            });
+            filterTasks();
+        }
+
+// 全选标签
+        function selectAllTags() {
+            const allTags = new Set();
+            allTasks.forEach(task => {
+                task.tags.forEach(tag => allTags.add(tag));
+            });
+            allTags.forEach(tag => selectedTags.add(tag));
+            updateTagCloudUI();
+            filterTasks();
+        }
+
+        // 全不选标签
+        function deselectAllTags() {
+            selectedTags.clear();
+            updateTagCloudUI();
+            filterTasks();
+        }
+
+        // 更新标签云UI
+        function updateTagCloudUI() {
+            document.querySelectorAll('.tag-pill').forEach(el => {
+                const tagText = el.textContent.split(' (')[0];
+                el.classList.toggle('active', selectedTags.has(tagText));
+            });
+        }
+
+        // 切换标签选择
+        function toggleTag(tag) {
+            if (selectedTags.has(tag)) {
+                selectedTags.delete(tag);
+            } else {
+                selectedTags.add(tag);
+            }
+            
+            updateTagCloudUI();
+            filterTasks();
+        }
+
+        // 筛选任务
+        function filterTasks() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const fileDateFilter = document.getElementById('fileDateFilter').value;
+            const dueFilter = document.getElementById('dueFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+            const statusCheckboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked');
+            const allowedStatuses = Array.from(statusCheckboxes).map(cb => cb.value);
+
+            filteredTasks = allTasks.filter(task => {
+                // 搜索筛选
+                if (searchTerm && !task.text.toLowerCase().includes(searchTerm) &&
+                    !task.tags.some(tag => tag.toLowerCase().includes(searchTerm)) &&
+                    !task.file.toLowerCase().includes(searchTerm)) {
+                    return false;
+                }
+
+                // 状态筛选
+                if (!allowedStatuses.includes(task.status)) {
+                    return false;
+                }
+
+                // 文件日期筛选
+                if (fileDateFilter !== 'all') {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    switch (fileDateFilter) {
+                        case 'today':
+                            if (!isFileInDate(task.file, today)) return false;
+                            break;
+                        case 'week':
+                            if (!isFileInWeek(task.file, today)) return false;
+                            break;
+                        case 'lastweek':
+                            if (!isFileInLastWeek(task.file, today)) return false;
+                            break;
+                        case 'month':
+                            if (!isFileInMonth(task.file, today)) return false;
+                            break;
+                    }
+                }
+
+                // 标签筛选（支持层级标签）
+                const noTagsOnly = document.getElementById('noTagsOnly').checked;
+                if (noTagsOnly) {
+                    if (task.tags.length > 0) {
+                        return false;
+                    }
+                } else if (selectedTags.size > 0) {
+                    let hasMatchingTag = false;
+                    const includeSubTags = document.getElementById('includeSubTags').checked;
+                    
+                    for (const selectedTag of selectedTags) {
+                        // 检查是否直接匹配
+                        if (task.tags.includes(selectedTag)) {
+                            hasMatchingTag = true;
+                            break;
+                        }
+                        
+                        // 检查是否匹配子标签（仅在勾选"包含子标签"时）
+                        if (includeSubTags) {
+                            for (const taskTag of task.tags) {
+                                if (taskTag.startsWith(selectedTag + '/')) {
+                                    hasMatchingTag = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (hasMatchingTag) break;
+                    }
+                    
+                    if (!hasMatchingTag) {
+                        return false;
+                    }
+                }
+
+                // 截止日期筛选 (包括 📅 截止日期和 ⏳ 计划日期)
+                if (dueFilter === 'nodate') {
+                    if (task.due || task.scheduled) return false;
+                } else if (dueFilter !== 'all') {
+                    // Get the effective date (due takes priority over scheduled)
+                    const effectiveDate = task.due || task.scheduled;
+                    if (!effectiveDate) return false;
+                    
+                    const taskDate = new Date(effectiveDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    switch (dueFilter) {
+                        case 'overdue':
+                            if (task.status === 'x') return false;
+                            if (taskDate >= today) return false;
+                            break;
+                        case 'today':
+                            if (!isToday(taskDate, today)) return false;
+                            break;
+                        case 'week':
+                            if (!isInWeek(taskDate, today)) return false;
+                            break;
+                        case 'month':
+                            if (!isInMonth(taskDate, today)) return false;
+                            break;
+                        case 'future':
+                            if (taskDate <= today) return false;
+                            break;
+                    }
+                }
+
+                return true;
+            });
+
+            // 排序
+            filteredTasks.sort((a, b) => {
+                switch (sortBy) {
+                    case 'due':
+                        // Get effective date (due takes priority over scheduled)
+                        const aEffective = a.due || a.scheduled;
+                        const bEffective = b.due || b.scheduled;
+                        if (!aEffective && !bEffective) return 0;
+                        if (!aEffective) return 1;
+                        if (!bEffective) return -1;
+                        return new Date(aEffective) - new Date(bEffective);
+                    case 'status':
+                        return a.status.localeCompare(b.status);
+                    case 'file':
+                        return a.file.localeCompare(b.file);
+                    case 'text':
+                        return a.text.localeCompare(b.text);
+                    case 'created':
+                        return a.lineNumber - b.lineNumber;
+                    default:
+                        return 0;
+                }
+            });
+
+            renderTasks();
+        }
+
+        // 渲染任务列表
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            const taskTitle = document.getElementById('taskTitle');
+            
+            taskTitle.textContent = `任务列表 (${filteredTasks.length})`;
+            
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>没有找到任务</h3>
+                        <p>尝试调整筛选条件或添加新任务</p>
+                    </div>
+                `;
+                return;
+            }
+
+            taskList.innerHTML = filteredTasks.map(task => renderTaskItem(task)).join('');
+            
+            // Also update timeline if in timeline mode
+            if (timelineMode) {
+                renderTimeline();
+            }
+        }
+
+        // 渲染单个任务
+        function renderTaskItem(task) {
+            const statusClass = getStatusClass(task.status);
+            const dueClass = getDueClass(task.due, task.status);
+            const taskId = `${task.file}_${task.lineNumber}`;
+            const isSelected = selectedTasks.has(taskId);
+            
+            return `
+                <div class="task-item ${isSelected ? 'selected' : ''}" data-task-id="${taskId}">
+                    ${bulkSelectMode ? `<input type="checkbox" class="bulk-select-checkbox" 
+                           ${isSelected ? 'checked' : ''} 
+                           onchange="toggleTaskSelection('${taskId}')">` : ''}
+                    <span class="task-status-icon">${getStatusIcon(task.status)}</span>
+                    <div class="task-content">
+                        <div class="task-text ${statusClass}" 
+                             contenteditable="false" 
+                             data-file="${task.file}" 
+                             data-line="${task.lineNumber}"
+                             ondblclick="startEditTask(this)"
+                             onblur="saveTaskEdit(this)"
+                             onkeydown="handleTaskEditKeydown(event, this)">${task.text}</div>
+                        <div class="task-meta">
+                            ${task.tags.map(tag => `<span class="task-tag" onclick="filterByTag('${tag}')">${tag}</span>`).join('')}
+                            ${task.due ? `<span class="task-due ${dueClass}">📅 ${formatDate(task.due)}</span>` : ''}
+                            ${task.scheduled ? `<span class="task-due ${getDueClass(task.scheduled, task.status)}">⏳ ${formatDate(task.scheduled)}</span>` : ''}
+                            <span class="task-file">📄 ${task.file}</span>
+                        </div>
+                        ${task.subItems.length > 0 ? `<div class="task-subitems">${task.subItems.map(item => `<div class="task-subitem">• ${item}</div>`).join('')}</div>` : ''}
+                    </div>
+                    <div class="task-item-actions">
+                        <select onchange="changeTaskStatus('${task.file}', ${task.lineNumber}, this.value)" style="font-size: 12px; padding: 4px; margin-right: 5px;">
+                            <option value=" " ${task.status === ' ' ? 'selected' : ''}>待办 [ ]</option>
+                            <option value="x" ${task.status === 'x' ? 'selected' : ''}>完成 [x]</option>
+                            <option value="*" ${task.status === '*' ? 'selected' : ''}>星标 [*]</option>
+                            <option value="-" ${task.status === '-' ? 'selected' : ''}>取消 [-]</option>
+                            <option value="!" ${task.status === '!' ? 'selected' : ''}>重要 [!]</option>
+                            <option value="/" ${task.status === '/' ? 'selected' : ''}>进行中 [/]</option>
+                            <option value="i" ${task.status === 'i' ? 'selected' : ''}>信息 [i]</option>
+                            <option value="?" ${task.status === '?' ? 'selected' : ''}>疑问 [?]</option>
+                            <option value="&quot;" ${task.status === '"' ? 'selected' : ''}>引用 ["]</option>
+                        </select>
+                        <button onclick="editTask('${task.file}', ${task.lineNumber})">编辑</button>
+                        <button onclick="deleteTask('${task.file}', ${task.lineNumber})">删除</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 获取状态图标
+        function getStatusIcon(status) {
+            switch (status) {
+                case ' ': return '⭕';
+                case 'x': return '✅';
+                case '*': return '⭐';
+                case '-': return '❌';
+                case '!': return '🔴';
+                case '/': return '🔄';
+                case 'i': return 'ℹ️';
+                case '?': return '❓';
+                case '"': return '💬';
+                default: return '';
+            }
+        }
+
+// 获取状态样式类
+        function getStatusClass(status) {
+            switch (status) {
+                case 'x': return 'status-done';
+                case '-': return 'status-cancelled';
+                case '!': return 'status-important';
+                case '/': return 'status-in-progress';
+                case 'i': return 'status-info';
+                case '?': return 'status-question';
+                case '"': return 'status-quote';
+                default: return 'status-pending';
+            }
+        }
+
+        // 获取截止日期样式类
+        function getDueClass(due, status) {
+            if (!due || status === 'x') return '';
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(due);
+            
+            if (dueDate < today) return 'overdue';
+            if (isSameDay(dueDate, today)) return 'today';
+            return '';
+        }
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        // 日期比较函数
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+
+        function isInWeek(date, today) {
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            return date >= weekStart && date <= weekEnd;
+        }
+
+        function isInLastWeek(date, today) {
+            const lastWeekStart = new Date(today);
+            lastWeekStart.setDate(today.getDate() - today.getDay() - 7);
+            const lastWeekEnd = new Date(lastWeekStart);
+            lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+            return date >= lastWeekStart && date <= lastWeekEnd;
+        }
+
+        function isFileInLastWeek(filePath, today) {
+            // Extract date from file path (e.g., "Diary/2026/04-25.md")
+            const dateMatch = filePath.match(/(\d{4})\/(\d{2})-(\d{2})\.md$/);
+            if (!dateMatch) return false;
+            
+            const [, year, month, day] = dateMatch;
+            const fileDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            return isInLastWeek(fileDate, today);
+        }
+
+        function isFileInDate(filePath, today) {
+            const dateMatch = filePath.match(/(\d{4})\/(\d{2})-(\d{2})\.md$/);
+            if (!dateMatch) return false;
+            
+            const [, year, month, day] = dateMatch;
+            const fileDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            return isToday(fileDate, today);
+        }
+
+        function isFileInWeek(filePath, today) {
+            const dateMatch = filePath.match(/(\d{4})\/(\d{2})-(\d{2})\.md$/);
+            if (!dateMatch) return false;
+            
+            const [, year, month, day] = dateMatch;
+            const fileDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            return isInWeek(fileDate, today);
+        }
+
+        function isFileInMonth(filePath, today) {
+            const dateMatch = filePath.match(/(\d{4})\/(\d{2})-(\d{2})\.md$/);
+            if (!dateMatch) return false;
+            
+            const [, year, month, day] = dateMatch;
+            const fileDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            return isInMonth(fileDate, today);
+        }
+
+        function isInMonth(date, today) {
+            return date.getFullYear() === today.getFullYear() &&
+                   date.getMonth() === today.getMonth();
+        }
+
+        // 更改任务状态
+        async function changeTaskStatus(file, lineNumber, newStatus) {
+            const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
+            if (task && task.status !== newStatus) {
+                task.status = newStatus;
+                await saveTaskToFile(task);
+                await loadTasksInternal();
+                showMessage('任务状态已更新', 'success');
+            }
+        }
+
+// 取消任务
+        async function cancelTask(file, lineNumber) {
+            const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
+            if (task) {
+                task.status = '-';
+                await saveTaskToFile(task);
+                await loadTasksInternal();
+                showMessage('任务已取消', 'success');
+            }
+        }
+
+// 切换任务状态
+        async function toggleTaskStatus(file, lineNumber) {
+            const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
+            if (task) {
+                task.status = task.status === 'x' ? ' ' : 'x';
+                await saveTaskToFile(task);
+                updateStats();
+                filterTasks();
+            }
+        }
+
+        // 开始编辑任务
+        function startEditTask(element) {
+            element.contentEditable = true;
+            element.classList.add('editing');
+            element.focus();
+            
+            // 选中全部文本
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+        // 处理任务编辑键盘事件
+        function handleTaskEditKeydown(event, element) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                element.blur();
+            } else if (event.key === 'Escape') {
+                element.contentEditable = false;
+                element.classList.remove('editing');
+                // 恢复原始文本
+                const task = allTasks.find(t => t.file === element.dataset.file && t.lineNumber === parseInt(element.dataset.line));
+                if (task) {
+                    element.textContent = task.text;
+                }
+            }
+        }
+
+        // 保存任务编辑
+        async function saveTaskEdit(element) {
+            element.contentEditable = false;
+            element.classList.remove('editing');
+            
+            const task = allTasks.find(t => t.file === element.dataset.file && t.lineNumber === parseInt(element.dataset.line));
+            if (task && element.textContent.trim() !== task.text) {
+                task.text = element.textContent.trim();
+                await saveTaskToFile(task);
+                filterTasks();
+                showMessage('任务已更新', 'success');
+            }
+        }
+
+        // 按标签筛选
+        function filterByTag(tag) {
+            selectedTags.clear();
+            selectedTags.add(tag);
+            
+            // 更新标签云UI
+            document.querySelectorAll('.tag-pill').forEach(el => {
+                if (el.textContent.startsWith(tag)) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            
+            filterTasks();
+        }
+
+        // 切换添加任务表单
+        function toggleAddTaskForm() {
+            const form = document.getElementById('addTaskForm');
+            form.classList.toggle('active');
+            
+            if (form.classList.contains('active')) {
+                document.getElementById('newTaskText').focus();
+            }
+        }
+
+        // 添加新任务
+        async function addNewTask() {
+            const text = document.getElementById('newTaskText').value.trim();
+            const status = document.getElementById('newTaskStatus').value;
+            const tags = document.getElementById('newTaskTags').value.trim().split(/\s+/).filter(t => t);
+            const due = document.getElementById('newTaskDue').value;
+            
+            if (!text) {
+                showMessage('请输入任务内容', 'error');
+                return;
+            }
+
+            // 创建新任务到默认文件
+            const fileName = 'Tasks.md';
+            let fileHandle = fileHandles.get(fileName);
+            
+            if (!fileHandle) {
+                // 创建新文件
+                try {
+                    fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+                    fileHandles.set(fileName, fileHandle);
+                    
+                    // 写入文件头
+                    const writable = await fileHandle.createWritable();
+                    await writable.write('# Tasks\n\n');
+                    await writable.close();
+                } catch (error) {
+                    showMessage('创建任务文件失败', 'error');
+                    return;
+                }
+            }
+
+            const newTask = {
+                file: fileName,
+                lineNumber: allTasks.filter(t => t.file === fileName).length + 3,
+                status,
+                text,
+                tags,
+                due,
+                isNew: true
+            };
+
+            await saveTaskToFile(newTask);
+            
+            // 清空表单
+            document.getElementById('newTaskText').value = '';
+            document.getElementById('newTaskTags').value = '';
+            document.getElementById('newTaskDue').value = '';
+            document.getElementById('newTaskStatus').value = ' ';
+            
+            toggleAddTaskForm();
+            await loadTasksInternal();
+            showMessage('任务已添加', 'success');
+        }
+
+        // 保存任务到文件
+        async function saveTaskToFile(task) {
+            const fileHandle = fileHandles.get(task.file);
+            if (!fileHandle) {
+                throw new Error('文件不存在');
+            }
+
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            const lines = content.split('\n');
+
+            if (task.isNew) {
+                // 添加新任务
+                const newTaskLine = formatTaskLine(task);
+                lines.push(newTaskLine);
+            } else {
+                // 更新现有任务
+                if (task.lineNumber > 0 && task.lineNumber <= lines.length) {
+                    lines[task.lineNumber - 1] = formatTaskLine(task);
+                }
+            }
+
+            // 写回文件
+            const writable = await fileHandle.createWritable();
+            await writable.write(lines.join('\n'));
+            await writable.close();
+        }
+
+        // 格式化任务行
+        function formatTaskLine(task) {
+            let line = `- [${task.status}] ${task.text}`;
+            
+            if (task.tags && task.tags.length > 0) {
+                line += ' ' + task.tags.join(' ');
+            }
+            
+            if (task.due) {
+                line += ` 📅 ${task.due}`;
+            }
+            
+            return line;
+        }
+
+        // 删除任务
+        async function deleteTask(file, lineNumber) {
+            if (!confirm('确定要删除这个任务吗？')) return;
+
+            const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
+            if (!task) return;
+
+            const fileHandle = fileHandles.get(file);
+            if (!fileHandle) return;
+
+            const fileContent = await fileHandle.getFile();
+            const content = await fileContent.text();
+            const lines = content.split('\n');
+
+            if (lineNumber > 0 && lineNumber <= lines.length) {
+                lines.splice(lineNumber - 1, 1);
+                
+                const writable = await fileHandle.createWritable();
+                await writable.write(lines.join('\n'));
+                await writable.close();
+                
+                await loadTasksInternal();
+                showMessage('任务已删除', 'success');
+            }
+        }
+
+        // 刷新任务
+        async function refreshTasks() {
+            if (!directoryHandle) {
+                showMessage('请先选择文件夹', 'error');
+                return;
+            }
+            await loadTasksInternal();
+        }
+
+        // 公共加载任务函数 (用于刷新按钮)
+        async function loadTasks() {
+            await refreshTasks();
+        }
+
+        // 导出任务
+        function exportTasks() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                totalTasks: allTasks.length,
+                tasks: allTasks
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tasks_export_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showMessage('任务已导出', 'success');
+        }
+
+        // 批量选择模式切换
+        function toggleBulkSelect() {
+            bulkSelectMode = !bulkSelectMode;
+            const bulkActions = document.getElementById('bulkActions');
+            
+            if (bulkSelectMode) {
+                bulkActions.classList.add('active');
+                showMessage('批量选择模式已开启', 'info');
+            } else {
+                bulkActions.classList.remove('active');
+                selectedTasks.clear();
+                showMessage('批量选择模式已关闭', 'info');
+            }
+            
+            renderTasks();
+            updateBulkActionsUI();
+        }
+
+        // 切换任务选择
+        function toggleTaskSelection(taskId) {
+            if (selectedTasks.has(taskId)) {
+                selectedTasks.delete(taskId);
+            } else {
+                selectedTasks.add(taskId);
+            }
+            
+            updateBulkActionsUI();
+            renderTasks();
+        }
+
+        // 更新批量操作UI
+        function updateBulkActionsUI() {
+            const selectedCount = selectedTasks.size;
+            document.getElementById('selectedCount').textContent = selectedCount;
+            
+            // 更新模态框中的计数
+            document.getElementById('modalSelectedCount').textContent = selectedCount;
+        }
+
+        // 全选任务
+        function selectAllTasks() {
+            filteredTasks.forEach(task => {
+                const taskId = `${task.file}_${task.lineNumber}`;
+                selectedTasks.add(taskId);
+            });
+            
+            updateBulkActionsUI();
+            renderTasks();
+            showMessage(`已选择所有 ${selectedTasks.size} 个任务`, 'success');
+        }
+
+        // 取消选择
+        function deselectAllTasks() {
+            selectedTasks.clear();
+            updateBulkActionsUI();
+            renderTasks();
+            showMessage('已取消所有选择', 'info');
+        }
+
+        // 显示标签替换模态框
+        function showTagReplaceModal() {
+            if (selectedTasks.size === 0) {
+                showMessage('请先选择要修改的任务', 'error');
+                return;
+            }
+            
+            document.getElementById('tagReplaceModal').classList.add('active');
+            document.getElementById('replaceOldTag').value = '';
+            document.getElementById('replaceNewTag').value = '';
+            document.getElementById('replaceMode').checked = false;
+        }
+
+        // 关闭标签替换模态框
+        function closeTagReplaceModal() {
+            document.getElementById('tagReplaceModal').classList.remove('active');
+        }
+
+        // 执行标签替换
+        async function executeTagReplace() {
+            const oldTag = document.getElementById('replaceOldTag').value.trim();
+            const newTag = document.getElementById('replaceNewTag').value.trim();
+            const replaceMode = document.getElementById('replaceMode').checked;
+            
+            if (!newTag) {
+                showMessage('请输入新标签', 'error');
+                return;
+            }
+            
+            if (replaceMode && !oldTag) {
+                showMessage('替换模式下需要指定要替换的标签', 'error');
+                return;
+            }
+            
+            showMessage('正在修改标签...', 'info');
+            
+            try {
+                let modifiedCount = 0;
+                
+                for (const taskId of selectedTasks) {
+                    const [file, lineNumber] = taskId.split('_').map((part, index) => 
+                        index === 1 ? parseInt(part) : part
+                    );
+                    
+                    const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
+                    if (!task) continue;
+                    
+                    // 修改标签
+                    if (replaceMode) {
+                        // 替换模式
+                        task.tags = task.tags.map(tag => 
+                            tag === oldTag ? newTag : tag
+                        );
+                    } else {
+                        // 添加模式
+                        if (!task.tags.includes(newTag)) {
+                            task.tags.push(newTag);
+                        }
+                    }
+                    
+                    await saveTaskToFile(task);
+                    modifiedCount++;
+                }
+                
+                closeTagReplaceModal();
+                await loadTasksInternal();
+                showMessage(`成功修改 ${modifiedCount} 个任务的标签`, 'success');
+                
+            } catch (error) {
+                showMessage('修改标签失败: ' + error.message, 'error');
+            }
+        }
+
+        // 删除选中的任务
+        async function deleteSelectedTasks() {
+            if (selectedTasks.size === 0) {
+                showMessage('请先选择要删除的任务', 'error');
+                return;
+            }
+            
+            if (!confirm(`确定要删除选中的 ${selectedTasks.size} 个任务吗？`)) {
+                return;
+            }
+            
+            showMessage('正在删除任务...', 'info');
+            
+            try {
+                let deletedCount = 0;
+                
+                // 按文件分组删除
+                const tasksByFile = {};
+                for (const taskId of selectedTasks) {
+                    const [file, lineNumber] = taskId.split('_').map((part, index) => 
+                        index === 1 ? parseInt(part) : part
+                    );
+                    
+                    if (!tasksByFile[file]) {
+                        tasksByFile[file] = [];
+                    }
+                    tasksByFile[file].push(parseInt(lineNumber));
+                }
+                
+                // 按文件处理删除
+                for (const [file, lineNumbers] of Object.entries(tasksByFile)) {
+                    const fileHandle = fileHandles.get(file);
+                    if (!fileHandle) continue;
+                    
+                    const fileContent = await fileHandle.getFile();
+                    const content = await fileContent.text();
+                    let lines = content.split('\n');
+                    
+                    // 按行号倒序删除，避免行号偏移
+                    lineNumbers.sort((a, b) => b - a);
+                    
+                    for (const lineNumber of lineNumbers) {
+                        if (lineNumber > 0 && lineNumber <= lines.length) {
+                            lines.splice(lineNumber - 1, 1);
+                            deletedCount++;
+                        }
+                    }
+                    
+                    // 写回文件
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(lines.join('\n'));
+                    await writable.close();
+                }
+                
+                selectedTasks.clear();
+                updateBulkActionsUI();
+                await loadTasksInternal();
+                showMessage(`成功删除 ${deletedCount} 个任务`, 'success');
+                
+            } catch (error) {
+                showMessage('删除任务失败: ' + error.message, 'error');
+            }
+        }
+
+        // 暗黑模式切换
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update button text
+            const btn = document.getElementById('darkModeToggle');
+            btn.textContent = newTheme === 'dark' ? '☀️ 亮色模式' : '🌙 暗黑模式';
+        }
+
+        // 时间线视图切换
+        function toggleTimelineView() {
+            timelineMode = !timelineMode;
+            const timelineView = document.getElementById('timelineView');
+            const taskList = document.getElementById('taskList');
+            const btn = document.querySelector('button[onclick="toggleTimelineView()"]');
+            
+            if (timelineMode) {
+                timelineView.style.display = 'block';
+                taskList.style.display = 'none';
+                btn.textContent = '📋 列表视图';
+                renderTimeline();
+            } else {
+                timelineView.style.display = 'none';
+                taskList.style.display = 'block';
+                btn.textContent = '📅 时间线视图';
+            }
+        }
+
+        // 渲染时间线视图
+        function renderTimeline() {
+            const timelineView = document.getElementById('timelineView');
+            timelineView.innerHTML = '';
+            
+            // Group tasks by certification type
+            const certTypes = {
+                'developer': { name: 'Developer Cert', tasks: [] },
+                'agent': { name: 'Agent Cert', tasks: [] },
+                'ai': { name: 'AI-Based Cert', tasks: [] },
+                'other': { name: 'Other Certification', tasks: [] }
+            };
+            
+            // Categorize tasks
+            filteredTasks.forEach(task => {
+                const text = task.text.toLowerCase();
+                let category = 'other';
+                
+                if (text.includes('developer') || text.includes('dev') || text.includes('software')) {
+                    category = 'developer';
+                } else if (text.includes('agent') || text.includes('broker') || text.includes('sales')) {
+                    category = 'agent';
+                } else if (text.includes('ai') || text.includes('machine learning') || text.includes('ml')) {
+                    category = 'ai';
+                }
+                
+                certTypes[category].tasks.push(task);
+            });
+            
+            // Render each category
+            Object.entries(certTypes).forEach(([key, category]) => {
+                if (category.tasks.length === 0) return;
+                
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'timeline-category';
+                
+                const header = document.createElement('h3');
+                header.textContent = `${category.name} (${category.tasks.length})`;
+                categoryDiv.appendChild(header);
+                
+                const tasksDiv = document.createElement('div');
+                tasksDiv.className = 'timeline-tasks';
+                
+                // Sort tasks by effective date (due or scheduled)
+                const sortedTasks = category.tasks.sort((a, b) => {
+                    const aEffective = a.due || a.scheduled;
+                    const bEffective = b.due || b.scheduled;
+                    if (!aEffective) return 1;
+                    if (!bEffective) return -1;
+                    return new Date(aEffective) - new Date(bEffective);
+                });
+                
+                sortedTasks.forEach(task => {
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'timeline-task';
+                    
+                    const isCompleted = task.status === 'x';
+                    const effectiveDate = task.due || task.scheduled;
+                    const isOverdue = effectiveDate && new Date(effectiveDate) < new Date() && !isCompleted;
+                    
+                    if (isCompleted) taskDiv.classList.add('completed');
+                    if (isOverdue) taskDiv.classList.add('overdue');
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'timeline-task-header';
+                    
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'timeline-task-date';
+                    if (isOverdue) dateDiv.classList.add('overdue');
+                    if (effectiveDate) {
+                        dateDiv.textContent = (task.due ? '📅 ' : '⏳ ') + formatDate(effectiveDate);
+                    } else {
+                        dateDiv.textContent = 'No date';
+                    }
+                    headerDiv.appendChild(dateDiv);
+                    
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'timeline-task-title';
+                    titleDiv.textContent = task.text;
+                    headerDiv.appendChild(titleDiv);
+                    
+                    // Add tags inline with title
+                    task.tags.forEach(tag => {
+                        const tagSpan = document.createElement('span');
+                        tagSpan.className = 'timeline-task-tag';
+                        tagSpan.textContent = tag;
+                        headerDiv.appendChild(tagSpan);
+                    });
+                    
+                    taskDiv.appendChild(headerDiv);
+                    tasksDiv.appendChild(taskDiv);
+                });
+                
+                categoryDiv.appendChild(tasksDiv);
+                timelineView.appendChild(categoryDiv);
+            });
+            
+            if (timelineView.innerHTML === '') {
+                timelineView.innerHTML = '<div class="empty-state"><h3>No tasks found</h3></div>';
+            }
+        }
+
+        // 初始化暗黑模式
+        function initDarkMode() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            let theme = savedTheme;
+            if (!theme) {
+                theme = prefersDark ? 'dark' : 'light';
+            }
+            
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Update button text
+            const btn = document.getElementById('darkModeToggle');
+            if (btn) {
+                btn.textContent = theme === 'dark' ? '☀️ 亮色模式' : '🌙 暗黑模式';
+            }
+        }
+
+        // 检查浏览器兼容性
+        function checkBrowserSupport() {
+            if (!window.showDirectoryPicker) {
+                document.getElementById('selectAndLoadBtn').textContent = '浏览器不支持';
+                document.getElementById('selectAndLoadBtn').disabled = true;
+                showMessage('您的浏览器不支持文件系统访问API。请使用Chrome、Edge等现代浏览器。', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            checkBrowserSupport();
+        });
+    </script>
+
+    <!-- Tag Replacement Modal -->
+    <div class="tag-replace-modal" id="tagReplaceModal">
+        <div class="tag-replace-content">
+            <div class="tag-replace-header">
+                <h3>批量修改标签</h3>
+                <p>为选中的 <span id="modalSelectedCount">0</span> 个任务修改标签</p>
+            </div>
+            <div class="tag-replace-options">
+                <div class="replace-option">
+                    <label>要替换的标签 (可选)</label>
+                    <input type="text" id="replaceOldTag" placeholder="例如: #oldtag 或留空添加新标签">
+                </div>
+                <div class="replace-option">
+                    <label>新标签</label>
+                    <input type="text" id="replaceNewTag" placeholder="例如: #newtag">
+                </div>
+                <div class="replace-option">
+                    <label>
+                        <input type="checkbox" id="replaceMode"> 替换模式 (否则为添加模式)</label>
+                </div>
+            </div>
+            <div class="replace-actions">
+                <button onclick="closeTagReplaceModal()">取消</button>
+                <button class="btn-primary" onclick="executeTagReplace()">执行替换</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
