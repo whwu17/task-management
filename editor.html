@@ -644,6 +644,9 @@
 
         .timeline-view {
             padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            height: 0; /* Important for flex child to respect flex: 1 */
         }
 
         .timeline-category {
@@ -1026,6 +1029,8 @@
             <div class="header-content">
                 <div class="folder-selector">
                     <button id="selectAndLoadBtn" onclick="selectAndLoadTasks()">选择文件夹并加载任务</button>
+                    <input type="file" id="fileInput" multiple accept=".md" style="display: none;" onchange="handleFileSelect(event)">
+                    <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;" onchange="handleFolderSelect(event)">
                     <div class="current-folder" id="currentFolder">未选择文件夹</div>
                 </div>
                 <div class="stats-bar">
@@ -1076,7 +1081,7 @@
                     <button onclick="resetAllFilters()" style="margin-top: 10px; width: 100%; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--text-primary); font-size: 12px;">🔄 重置所有筛选</button>
                 </div>
 
-                <div class="filter-section">
+                <div class="filter-section" style="display: none;">
                     <h3>状态</h3>
                     <div class="checkbox-group">
                         <label>
@@ -1241,6 +1246,7 @@
         let selectedTasks = new Set();
         let bulkSelectMode = false;
         let timelineMode = false;
+        let isReadOnlyMode = false;
 
         // 显示消息
         function showMessage(text, type = 'info') {
@@ -1255,11 +1261,17 @@
 
         // 选择文件夹并加载任务
         async function selectAndLoadTasks() {
-            if (!window.showDirectoryPicker) {
-                showMessage('您的浏览器不支持文件系统访问API，请使用Chrome、Edge等现代浏览器', 'error');
-                return;
+            if (window.showDirectoryPicker) {
+                // Full functionality mode for Chrome/Edge
+                await selectAndLoadTasksFull();
+            } else {
+                // Fallback to file selection for Safari/others
+                document.getElementById('fileInput').click();
             }
+        }
 
+        // Full functionality for supported browsers (Chrome/Edge)
+        async function selectAndLoadTasksFull() {
             try {
                 // Disable button during operation
                 const btn = document.getElementById('selectAndLoadBtn');
@@ -1272,11 +1284,18 @@
                 btn.textContent = '正在加载任务...';
                 showMessage('正在加载任务...', 'info');
                 
+                // Normal mode (read-write)
+                isReadOnlyMode = false;
+                
                 // Load tasks immediately after folder selection
                 await loadTasksInternal();
                 
                 btn.textContent = '重新加载任务';
                 btn.disabled = false;
+                
+                // Enable write features
+                enableWriteFeatures();
+                showMessage(`成功加载 ${allTasks.length} 个任务`, 'success');
                 
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -1287,6 +1306,83 @@
                 const btn = document.getElementById('selectAndLoadBtn');
                 btn.textContent = '选择文件夹并加载任务';
                 btn.disabled = false;
+            }
+        }
+
+        // Handle file selection for fallback mode (Safari/others)
+        async function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            isReadOnlyMode = true;
+            showMessage('正在读取文件...', 'info');
+            
+            await processFiles(files);
+        }
+
+        // Handle folder selection for Safari
+        async function handleFolderSelect(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            isReadOnlyMode = true;
+            showMessage('正在读取文件夹...', 'info');
+            
+            await processFiles(files);
+        }
+
+        // Process files (for both file input and drag-drop)
+        async function processFiles(files) {
+            try {
+                allTasks = [];
+                let processedFiles = 0;
+                
+                for (const file of files) {
+                    if (file.name.endsWith('.md')) {
+                        const text = await file.text();
+                        const lines = text.split('\n');
+                        // Get relative path from file.webkitRelativePath if available (for folder drag-drop)
+                        const filePath = file.webkitRelativePath || file.name;
+                        
+                        for (let index = 0; index < lines.length; index++) {
+                            const task = parseTaskLine(lines[index], index + 1, filePath);
+                            if (task) {
+                                // Capture indented sub-items
+                                const subItems = [];
+                                let subIndex = index + 1;
+                                while (subIndex < lines.length) {
+                                    const subLine = lines[subIndex].replace(/\r$/, ''); // Strip carriage return
+                                    // Check if line is indented (starts with tab or spaces) and not a task
+                                    if (/^[\t ]/.test(subLine) && !/^- \[/.test(subLine.trim())) {
+                                        subItems.push(subLine.trim().replace(/^[-\t ]+/, ''));
+                                        subIndex++;
+                                    } else if (subLine.trim() === '') {
+                                        subIndex++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                task.subItems = subItems;
+                                allTasks.push(task);
+                            }
+                        }
+                        processedFiles++;
+                    }
+                }
+                
+                filteredTasks = [...allTasks];
+                updateStats();
+                updateTagCloud();
+                filterTasks();
+                
+                document.getElementById('currentFolder').textContent = `已处理 ${processedFiles} 个文件 (只读模式)`;
+                showMessage(`成功加载 ${allTasks.length} 个任务 (只读模式)`, 'success');
+                
+                // Disable write-related UI elements
+                disableWriteFeatures();
+                
+            } catch (error) {
+                showMessage('读取文件失败: ' + error.message, 'error');
             }
         }
 
@@ -1781,21 +1877,23 @@
             const dueClass = getDueClass(task.due, task.status);
             const taskId = `${task.file}_${task.lineNumber}`;
             const isSelected = selectedTasks.has(taskId);
+            const isReadOnly = isReadOnlyMode;
             
             return `
                 <div class="task-item ${isSelected ? 'selected' : ''}" data-task-id="${taskId}">
-                    ${bulkSelectMode ? `<input type="checkbox" class="bulk-select-checkbox" 
+                    ${bulkSelectMode && !isReadOnly ? `<input type="checkbox" class="bulk-select-checkbox" 
                            ${isSelected ? 'checked' : ''} 
                            onchange="toggleTaskSelection('${taskId}')">` : ''}
                     <span class="task-status-icon">${getStatusIcon(task.status)}</span>
                     <div class="task-content">
                         <div class="task-text ${statusClass}" 
-                             contenteditable="false" 
+                             contenteditable="${!isReadOnly}" 
                              data-file="${task.file}" 
                              data-line="${task.lineNumber}"
-                             ondblclick="startEditTask(this)"
-                             onblur="saveTaskEdit(this)"
-                             onkeydown="handleTaskEditKeydown(event, this)">${task.text}</div>
+                             ${!isReadOnly ? `ondblclick="startEditTask(this)"` : ''}
+                             ${!isReadOnly ? `onblur="saveTaskEdit(this)"` : ''}
+                             ${!isReadOnly ? `onkeydown="handleTaskEditKeydown(event, this)"` : ''}
+                             style="cursor: ${isReadOnly ? 'default' : 'pointer'}">${task.text}</div>
                         <div class="task-meta">
                             ${task.tags.map(tag => `<span class="task-tag" onclick="filterByTag('${tag}')">${tag}</span>`).join('')}
                             ${task.due ? `<span class="task-due ${dueClass}">📅 ${formatDate(task.due)}</span>` : ''}
@@ -1805,7 +1903,9 @@
                         ${task.subItems.length > 0 ? `<div class="task-subitems">${task.subItems.map(item => `<div class="task-subitem">• ${item}</div>`).join('')}</div>` : ''}
                     </div>
                     <div class="task-item-actions">
-                        <select onchange="changeTaskStatus('${task.file}', ${task.lineNumber}, this.value)" style="font-size: 12px; padding: 4px; margin-right: 5px;">
+                        <select onchange="changeTaskStatus('${task.file}', ${task.lineNumber}, this.value)" 
+                                style="font-size: 12px; padding: 4px; margin-right: 5px;" 
+                                ${isReadOnly ? 'disabled' : ''}>
                             <option value=" " ${task.status === ' ' ? 'selected' : ''}>待办 [ ]</option>
                             <option value="x" ${task.status === 'x' ? 'selected' : ''}>完成 [x]</option>
                             <option value="*" ${task.status === '*' ? 'selected' : ''}>星标 [*]</option>
@@ -1816,8 +1916,10 @@
                             <option value="?" ${task.status === '?' ? 'selected' : ''}>疑问 [?]</option>
                             <option value="&quot;" ${task.status === '"' ? 'selected' : ''}>引用 ["]</option>
                         </select>
-                        <button onclick="editTask('${task.file}', ${task.lineNumber})">编辑</button>
-                        <button onclick="deleteTask('${task.file}', ${task.lineNumber})">删除</button>
+                        <button onclick="editTask('${task.file}', ${task.lineNumber})" 
+                                ${isReadOnly ? 'disabled' : ''}>编辑</button>
+                        <button onclick="deleteTask('${task.file}', ${task.lineNumber})" 
+                                ${isReadOnly ? 'disabled' : ''}>删除</button>
                     </div>
                 </div>
             `;
@@ -1877,6 +1979,10 @@
             return date1.getFullYear() === date2.getFullYear() &&
                    date1.getMonth() === date2.getMonth() &&
                    date1.getDate() === date2.getDate();
+        }
+
+        function isToday(date, today) {
+            return isSameDay(date, today);
         }
 
         function isInWeek(date, today) {
@@ -1939,12 +2045,30 @@
 
         // 更改任务状态
         async function changeTaskStatus(file, lineNumber, newStatus) {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法修改任务状态', 'error');
+                return;
+            }
+            
             const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
             if (task && task.status !== newStatus) {
                 task.status = newStatus;
                 await saveTaskToFile(task);
                 await loadTasksInternal();
                 showMessage('任务状态已更新', 'success');
+            }
+        }
+
+        // 编辑任务
+        function editTask(file, lineNumber) {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法编辑任务', 'error');
+                return;
+            }
+            
+            const taskElement = document.querySelector(`[data-file="${file}"][data-line="${lineNumber}"]`);
+            if (taskElement) {
+                startEditTask(taskElement);
             }
         }
 
@@ -2002,6 +2126,10 @@
 
         // 保存任务编辑
         async function saveTaskEdit(element) {
+            if (isReadOnlyMode) {
+                return;
+            }
+            
             element.contentEditable = false;
             element.classList.remove('editing');
             
@@ -2043,6 +2171,11 @@
 
         // 添加新任务
         async function addNewTask() {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法添加任务', 'error');
+                return;
+            }
+            
             const text = document.getElementById('newTaskText').value.trim();
             const status = document.getElementById('newTaskStatus').value;
             const tags = document.getElementById('newTaskTags').value.trim().split(/\s+/).filter(t => t);
@@ -2141,6 +2274,11 @@
 
         // 删除任务
         async function deleteTask(file, lineNumber) {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法删除任务', 'error');
+                return;
+            }
+            
             if (!confirm('确定要删除这个任务吗？')) return;
 
             const task = allTasks.find(t => t.file === file && t.lineNumber === lineNumber);
@@ -2171,7 +2309,17 @@
                 showMessage('请先选择文件夹', 'error');
                 return;
             }
+            
+            // Maintain current mode (read-write or read-only)
+            const currentMode = isReadOnlyMode;
             await loadTasksInternal();
+            
+            // Re-apply mode-specific settings
+            if (currentMode) {
+                disableWriteFeatures();
+            } else {
+                enableWriteFeatures();
+            }
         }
 
         // 公共加载任务函数 (用于刷新按钮)
@@ -2200,6 +2348,11 @@
 
         // 批量选择模式切换
         function toggleBulkSelect() {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法使用批量选择', 'error');
+                return;
+            }
+            
             bulkSelectMode = !bulkSelectMode;
             const bulkActions = document.getElementById('bulkActions');
             
@@ -2277,6 +2430,11 @@
 
         // 执行标签替换
         async function executeTagReplace() {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法修改标签', 'error');
+                return;
+            }
+            
             const oldTag = document.getElementById('replaceOldTag').value.trim();
             const newTag = document.getElementById('replaceNewTag').value.trim();
             const replaceMode = document.getElementById('replaceMode').checked;
@@ -2332,6 +2490,11 @@
 
         // 删除选中的任务
         async function deleteSelectedTasks() {
+            if (isReadOnlyMode) {
+                showMessage('只读模式下无法删除任务', 'error');
+                return;
+            }
+            
             if (selectedTasks.size === 0) {
                 showMessage('请先选择要删除的任务', 'error');
                 return;
@@ -2548,12 +2711,76 @@
             }
         }
 
+        // 启用写入功能
+        function enableWriteFeatures() {
+            // Enable add task button
+            const addTaskBtn = document.querySelector('button[onclick="toggleAddTaskForm()"]');
+            if (addTaskBtn) {
+                addTaskBtn.disabled = false;
+                addTaskBtn.title = '';
+            }
+            
+            // Enable bulk select button
+            const bulkSelectBtn = document.querySelector('button[onclick="toggleBulkSelect()"]');
+            if (bulkSelectBtn) {
+                bulkSelectBtn.disabled = false;
+                bulkSelectBtn.title = '';
+            }
+        }
+
+        // 禁用写入功能
+        function disableWriteFeatures() {
+            // Disable add task button
+            const addTaskBtn = document.querySelector('button[onclick="toggleAddTaskForm()"]');
+            if (addTaskBtn) {
+                addTaskBtn.disabled = true;
+                addTaskBtn.title = '只读模式下不可用';
+            }
+            
+            // Disable bulk select button
+            const bulkSelectBtn = document.querySelector('button[onclick="toggleBulkSelect()"]');
+            if (bulkSelectBtn) {
+                bulkSelectBtn.disabled = true;
+                bulkSelectBtn.title = '只读模式下不可用';
+            }
+            
+            // Hide add task form if visible
+            const addTaskForm = document.getElementById('addTaskForm');
+            if (addTaskForm) {
+                addTaskForm.style.display = 'none';
+            }
+            
+            // Disable all task editing functionality
+            document.querySelectorAll('.task-text').forEach(el => {
+                el.ondblclick = null;
+                el.onblur = null;
+                el.onkeydown = null;
+                el.style.cursor = 'default';
+            });
+            
+            // Disable status change dropdowns
+            document.querySelectorAll('.task-item-actions select').forEach(select => {
+                select.disabled = true;
+            });
+            
+            // Disable edit and delete buttons
+            document.querySelectorAll('.task-item-actions button').forEach(btn => {
+                if (btn.textContent.includes('编辑') || btn.textContent.includes('删除')) {
+                    btn.disabled = true;
+                }
+            });
+        }
+
         // 检查浏览器兼容性
         function checkBrowserSupport() {
             if (!window.showDirectoryPicker) {
-                document.getElementById('selectAndLoadBtn').textContent = '浏览器不支持';
-                document.getElementById('selectAndLoadBtn').disabled = true;
-                showMessage('您的浏览器不支持文件系统访问API。请使用Chrome、Edge等现代浏览器。', 'error');
+                // Browser doesn't support File System Access API (Safari, etc.)
+                document.getElementById('selectAndLoadBtn').textContent = '选择文件夹加载任务';
+                document.getElementById('selectAndLoadBtn').onclick = () => {
+                    document.getElementById('folderInput').click();
+                };
+                
+                showMessage('您的浏览器不支持现代文件夹访问API。请使用文件夹选择对话框。', 'info');
                 return false;
             }
             return true;
