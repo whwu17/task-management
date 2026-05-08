@@ -84,6 +84,20 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 15px;
         }
+        
+        .calendar-section {
+            min-height: 0;
+            flex: 0 0 auto;
+        }
+        
+        #calendarContainer {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px;
+            background: var(--bg-secondary);
+        }
 
         .sidebar-section:last-child {
             border-bottom: none;
@@ -97,6 +111,36 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 8px;
+        }
+
+        .calendar-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .calendar-tab {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .calendar-tab:hover {
+            background: var(--tag-bg);
+            color: var(--tag-color);
+        }
+
+        .calendar-tab.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
         }
 
         .calendar {
@@ -123,6 +167,11 @@
             cursor: pointer;
             padding: 4px 8px;
             font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .calendar-nav:hover {
+            color: var(--accent-color);
         }
 
         .calendar-weekdays {
@@ -161,6 +210,7 @@
             font-weight: 600;
         }
 
+        /* Tag-based calendar colors */
         .calendar-day.type-work {
             background: #e3f2fd;
             color: #1976d2;
@@ -200,6 +250,27 @@
         .calendar-day.type-default {
             background: var(--tag-bg);
             color: var(--tag-color);
+            font-weight: 600;
+        }
+
+        /* Done calendar colors - green */
+        .calendar-day.type-done {
+            background: #c8e6c9;
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        /* Due calendar colors - orange-red */
+        .calendar-day.type-due {
+            background: #ffccbc;
+            color: #d84315;
+            font-weight: 600;
+        }
+
+        /* Scheduled calendar colors - orange */
+        .calendar-day.type-scheduled {
+            background: #ffe0b2;
+            color: #e65100;
             font-weight: 600;
         }
 
@@ -502,14 +573,123 @@
         .message.error { background: var(--danger-color); }
         .message.info { background: var(--accent-color); }
 
+        /* Task sections for diary detail view */
+        .task-section {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .task-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-section.done {
+            border-left-color: var(--success-color);
+        }
+
+        .task-section.due {
+            border-left-color: #ff5722;
+        }
+
+        .task-section.scheduled {
+            border-left-color: var(--warning-color);
+        }
+
+        .task-section-item {
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            margin: 6px 0;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .task-section-item .task-icon {
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* Timeline view for Done/Created/Scheduled */
+        .timeline-container {
+            padding: 20px;
+        }
+
+        .timeline-date-group {
+            margin-bottom: 25px;
+        }
+
+        .timeline-date-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .timeline-items {
+            padding-left: 20px;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 10px 15px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            margin-left: 15px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -21px;
+            top: 15px;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            border: 2px solid var(--bg-secondary);
+        }
+
+        .timeline-item.done::before {
+            background: var(--success-color);
+        }
+
+        .timeline-item.scheduled::before {
+            background: var(--warning-color);
+        }
+
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
                 height: auto;
             }
             
-            .sidebar {
+            .sidebar:first-child {
+                order: 1;
+            }
+            
+            .sidebar:nth-child(2) {
                 order: 2;
+            }
+            
+            main {
+                order: 3;
+                height: auto;
+                min-height: 400px;
             }
         }
     </style>
@@ -518,25 +698,29 @@
     <div class="container">
         <!-- 第一栏：过滤和设置 -->
         <aside class="sidebar">
-            <h1>📚 笔记</h1>
+            <h1>笔记</h1>
             
+            <div class="sidebar-section">
+                <button onclick="selectFolder()" style="width: 100%; margin-bottom: 8px;">选择文件夹</button>
+                <button onclick="refreshNotes()" style="width: 100%; margin-bottom: 8px;">刷新</button>
+                <button onclick="toggleDarkMode()" id="darkModeToggle" style="width: 100%;">切换主题</button>
+                
+                <div id="browserWarning" style="display: none; margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404;">
+                    浏览器不支持现代API
+                </div>
+            </div>
+
             <div class="sidebar-section">
                 <h3>统计</h3>
                 <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-value" id="totalNotes">0</div>
-                        <div class="stat-label">总笔记</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="filteredNotes">0</div>
-                        <div class="stat-label">已筛选</div>
-                    </div>
+                    <div>总笔记: <span id="totalNotes">0</span></div>
+                    <div>已筛选: <span id="filteredNotes">0</span></div>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <h3>搜索</h3>
-                <div class="search-box">
+                <div class="search-container">
                     <input type="text" id="searchInput" placeholder="搜索笔记..." oninput="filterNotes()">
                 </div>
             </div>
@@ -559,24 +743,22 @@
                     <label><input type="checkbox" value="-" checked onchange="filterNotes()"> <span class="task-icon">❌</span> 取消 [-]</label>
                     <label><input type="checkbox" value="!" checked onchange="filterNotes()"> <span class="task-icon">🔴</span> 重要 [!]</label>
                     <label><input type="checkbox" value="/" checked onchange="filterNotes()"> <span class="task-icon">🔄</span> 进行中 [/]</label>
-                    <label><input type="checkbox" value="&quot;" checked onchange="filterNotes()"> <span class="task-icon">💬</span> 引用 ["]</label>
+                    <label><input type="checkbox" value="\“" checked onchange="filterNotes()"> <span class="task-icon">💬</span> 引用 [“]</label>
                 </div>
             </div>
 
-            <div class="sidebar-section">
-                <button onclick="selectFolder()" style="width: 100%; margin-bottom: 8px;">选择文件夹</button>
-                <button onclick="toggleDarkMode()" id="darkModeToggle" style="width: 100%;">切换主题</button>
-                
-                <div id="browserWarning" style="display: none; margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404;">
-                    ⚠️ 浏览器不支持现代API
-                </div>
-            </div>
         </aside>
 
         <!-- 第二栏：日历和目录树 -->
         <aside class="sidebar" style="border-right: 1px solid var(--border-color);">
-            <div class="sidebar-section">
-                <h3>日记日历</h3>
+            <div class="sidebar-section calendar-section">
+                <h3>日历视图</h3>
+                <div class="calendar-tabs">
+                    <div class="calendar-tab active" onclick="switchCalendarTab('diary')" id="tabDiary">日期</div>
+                    <div class="calendar-tab" onclick="switchCalendarTab('done')" id="tabDone">Done</div>
+                    <div class="calendar-tab" onclick="switchCalendarTab('due')" id="tabDue">Due</div>
+                    <div class="calendar-tab" onclick="switchCalendarTab('scheduled')" id="tabScheduled">Scheduled</div>
+                </div>
                 <div id="calendarContainer">
                     <!-- 日历将动态生成 -->
                 </div>
@@ -616,12 +798,15 @@
         let filteredNotes = [];
         let diaryNotes = [];
         let normalNotes = [];
+        let allTasks = []; // 所有任务（用于Done/Created/Scheduled日历）
         let selectedTags = new Set();
         let selectedStatuses = new Set();
         let directoryHandle = null;
         let currentMonth = new Date();
         let selectedDate = null;
         let selectedNoteFilePath = null;
+        let currentCalendarTab = 'diary'; // 当前日历Tab
+        let isRefreshing = false; // 防止刷新重复弹窗
 
         // 检测浏览器支持
         function isFileSystemAccessSupported() {
@@ -631,7 +816,6 @@
         // 验证并请求目录权限
         async function verifyPermission(dirHandle, isRefresh = false) {
             try {
-                // 如果是刷新操作，先尝试直接访问
                 if (isRefresh && dirHandle.queryPermission) {
                     const currentState = await dirHandle.queryPermission({ mode: 'read' });
                     if (currentState === 'granted') {
@@ -639,7 +823,6 @@
                     }
                 }
                 
-                // 请求权限
                 if (dirHandle.requestPermission) {
                     const result = await dirHandle.requestPermission({ mode: 'read' });
                     if (result === 'granted') {
@@ -647,11 +830,10 @@
                     }
                     throw new Error('没有权限访问该文件夹');
                 }
-                // 如果不支持 requestPermission，尝试直接访问
                 return true;
             } catch (err) {
                 console.log('Permission check:', err);
-                return true; // 继续尝试
+                return true;
             }
         }
 
@@ -660,7 +842,6 @@
             console.log('selectFolder called, FileSystemAccess supported:', isFileSystemAccessSupported());
             
             if (isFileSystemAccessSupported()) {
-                // Chrome/Edge 现代方式
                 try {
                     console.log('Opening directory picker...');
                     directoryHandle = await window.showDirectoryPicker();
@@ -673,7 +854,6 @@
                     }
                 }
             } else {
-                // Safari 兼容方式
                 console.log('Using Safari fallback');
                 document.getElementById('folderInput').click();
             }
@@ -683,7 +863,6 @@
         async function handleSafariFiles(files) {
             if (!files || files.length === 0) return;
             
-            // 设置虚拟的 directoryHandle 以便刷新功能工作
             directoryHandle = {
                 name: files[0].webkitRelativePath.split('/')[0] || 'Selected Folder',
                 isSafari: true,
@@ -694,13 +873,13 @@
             allNotes = [];
             diaryNotes = [];
             normalNotes = [];
+            allTasks = [];
             
             try {
                 for (const file of files) {
                     if (file.name.endsWith('.md')) {
                         const content = await file.text();
                         const path = file.webkitRelativePath || file.name;
-                        // 检查是否在 Diary 目录下
                         const isInDiaryFolder = path.includes('/Diary/') || path.includes('/diary/');
                         const note = parseNote(content, path, isInDiaryFolder);
                         if (note) {
@@ -710,6 +889,8 @@
                             } else {
                                 normalNotes.push(note);
                             }
+                            // 收集所有任务
+                            collectTasksFromNote(note);
                         }
                     }
                 }
@@ -727,8 +908,63 @@
             }
         }
 
+        // 从笔记收集任务
+        function collectTasksFromNote(note) {
+            if (!note.tasks) return;
+            
+            note.tasks.forEach(task => {
+                const taskInfo = {
+                    text: task.text,
+                    status: task.status,
+                    subItems: task.subItems || [],
+                    notePath: note.filePath,
+                    noteDate: note.date,
+                    // 从任务文本中提取日期相关字段
+                    doneDate: extractDateFromText(task.text, 'done'),
+                    dueDate: extractDateFromText(task.text, 'due'),
+                    scheduledDate: extractDateFromText(task.text, 'scheduled')
+                };
+                allTasks.push(taskInfo);
+            });
+        }
+
+        // 从任务文本中提取日期
+        function extractDateFromText(text, type) {
+            // 支持emoji格式: ⏳ 2026-05-10, 📅 2025-10-28, ✅ 2026-05-09
+            // 以及标签格式: #done/2024-01-15, #due/2024-01-15, #scheduled/2024-01-15
+            
+            let emojiPattern;
+            if (type === 'done') {
+                emojiPattern = /✅\s*(\d{4}-\d{2}-\d{2})/;
+            } else if (type === 'due') {
+                emojiPattern = /📅\s*(\d{4}-\d{2}-\d{2})/;
+            } else if (type === 'scheduled') {
+                emojiPattern = /⏳\s*(\d{4}-\d{2}-\d{2})/;
+            }
+            
+            // 先尝试emoji格式
+            if (emojiPattern) {
+                const emojiMatch = text.match(emojiPattern);
+                if (emojiMatch) {
+                    console.log(`Found ${type} date: ${emojiMatch[1]} from text: ${text}`);
+                    return emojiMatch[1];
+                }
+            }
+            
+            // 再尝试标签格式
+            const tagPattern = new RegExp(`#${type}/(\\d{4}-\\d{2}-\\d{2})`, 'i');
+            const tagMatch = text.match(tagPattern);
+            return tagMatch ? tagMatch[1] : null;
+        }
+
         // 加载笔记
         async function loadNotes(isRefresh = false) {
+            if (isRefreshing) {
+                console.log('Already refreshing, skipping...');
+                return;
+            }
+            
+            isRefreshing = true;
             showMessage('正在加载笔记...', 'info');
             
             try {
@@ -736,12 +972,12 @@
                     throw new Error('请先选择文件夹');
                 }
                 
-                // 验证权限
                 await verifyPermission(directoryHandle, isRefresh);
                 
                 allNotes = [];
                 diaryNotes = [];
                 normalNotes = [];
+                allTasks = [];
                 await processDirectory(directoryHandle);
                 
                 filteredNotes = [...allNotes];
@@ -754,6 +990,8 @@
                 showMessage(`成功加载 ${allNotes.length} 个笔记`, 'success');
             } catch (error) {
                 showMessage('加载失败: ' + error.message, 'error');
+            } finally {
+                isRefreshing = false;
             }
         }
 
@@ -762,7 +1000,6 @@
             for await (const entry of dirHandle.values()) {
                 const entryPath = path ? `${path}/${entry.name}` : entry.name;
                 
-                // 检测是否是 Diary 文件夹
                 const isDiaryFolder = entry.name === 'Diary' || entry.name === 'diary' || isInDiaryFolder;
                 
                 if (entry.kind === 'directory') {
@@ -780,6 +1017,7 @@
                             } else {
                                 normalNotes.push(note);
                             }
+                            collectTasksFromNote(note);
                         }
                     } catch (error) {
                         console.warn(`无法读取文件 ${entryPath}:`, error);
@@ -805,22 +1043,21 @@
                             const key = line.substring(0, colonIndex).trim();
                             const value = line.substring(colonIndex + 1).trim();
                             
-                            if (value.startsWith('-')) {
-                                // 数组格式
+                            if (value === '' || value.startsWith('-')) {
                                 const array = [];
-                                let j = i;
+                                let j = i + 1;
                                 while (j < lines.length && lines[j] !== '---') {
                                     const arrayLine = lines[j].trim();
                                     if (arrayLine.startsWith('-')) {
                                         const item = arrayLine.substring(1).trim().replace(/^["']|["']$/g, '');
                                         if (item) array.push(item);
-                                    } else if (arrayLine === '' || arrayLine.startsWith(' ')) {
-                                        // 多行数组的续行
+                                    } else if (arrayLine === '') {
+                                        // 空行继续
+                                    } else if (!arrayLine.includes(':') && array.length > 0) {
+                                        // 可能是数组项的续行
                                         const item = arrayLine.replace(/^["']|["']$/g, '').trim();
                                         if (item) {
-                                            if (array.length > 0) {
-                                                array[array.length - 1] += ' ' + item;
-                                            }
+                                            array[array.length - 1] += ' ' + item;
                                         }
                                     } else {
                                         break;
@@ -830,7 +1067,6 @@
                                 frontmatter[key] = array;
                                 i = j - 1;
                             } else {
-                                // 简单键值对
                                 frontmatter[key] = value.replace(/^["']|["']$/g, '');
                             }
                         }
@@ -842,13 +1078,12 @@
                 }
             }
             
-            // 提取日期从文件路径（支持 2024/01-15.md 或 2024/01/15.md 格式）
+            // 提取日期从文件路径
             let date = null;
             let isDiary = forceDiary;
             const dateMatch = filePath.match(/(\d{4})[\/-](\d{2})[\/-](\d{2})/);
             if (dateMatch) {
                 date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
-                // 如果文件名是日期格式，也视为日记
                 if (!isDiary && filePath.match(/\d{4}[\/-]\d{2}[\/-]\d{2}/)) {
                     isDiary = true;
                 }
@@ -858,12 +1093,11 @@
             const tasks = [];
             for (let i = bodyStart; i < lines.length; i++) {
                 const line = lines[i];
-                const taskMatch = line.match(/^-\s*\[([ x\-*!/\?"i])\]\s*(.+)$/);
+                const taskMatch = line.match(/^-\s*\[([ x\-*!\/?\"i])\]\s*(.+)$/);
                 if (taskMatch) {
                     const status = taskMatch[1];
                     const text = taskMatch[2];
                     
-                    // 提取子项
                     const subItems = [];
                     let j = i + 1;
                     while (j < lines.length) {
@@ -887,10 +1121,8 @@
             // 提取标题
             let title;
             if (isDiary && date) {
-                // 日记文件：标题就是日期
                 title = date;
             } else {
-                // 普通文件：从文件名或第一个 # 标题获取
                 title = filePath.split('/').pop().replace('.md', '');
                 for (let i = bodyStart; i < lines.length; i++) {
                     const headerMatch = lines[i].match(/^#\s+(.+)$/);
@@ -899,7 +1131,7 @@
                         break;
                     }
                 }
-            }
+}
             
             // 收集所有 frontmatter 作为 meta tags
             const metaTags = [];
@@ -909,7 +1141,7 @@
                 }
             }
             
-            // 提取完整正文内容（排除 frontmatter、代码块、Done/Scheduled/Pending 区域）
+            // 提取完整正文内容
             let bodyContent = [];
             let inCodeBlock = false;
             let inDoneSection = false;
@@ -919,7 +1151,6 @@
             for (let i = bodyStart; i < lines.length; i++) {
                 const line = lines[i];
                 
-                // 检查是否进入 Done 部分
                 if (line.match(/^##?\s*Done\s*$/i)) {
                     inDoneSection = true;
                     inScheduledSection = false;
@@ -927,7 +1158,6 @@
                     continue;
                 }
                 
-                // 检查是否进入 Scheduled 部分
                 if (line.match(/^##?\s*Scheduled\s*$/i)) {
                     inDoneSection = false;
                     inScheduledSection = true;
@@ -935,7 +1165,6 @@
                     continue;
                 }
                 
-                // 检查是否进入 Pending 部分
                 if (line.match(/^##?\s*Pending\s*$/i)) {
                     inDoneSection = false;
                     inScheduledSection = false;
@@ -943,9 +1172,7 @@
                     continue;
                 }
                 
-                // 如果在 Done/Scheduled/Pending 区域，跳过
                 if (inDoneSection || inScheduledSection || inPendingSection) {
-                    // 检查是否是新的同级或上级标题（## 或 # 开头）
                     if (line.match(/^#{1,2}\s+[^#]/)) {
                         inDoneSection = false;
                         inScheduledSection = false;
@@ -955,33 +1182,26 @@
                     }
                 }
                 
-                // 跳过代码块标记
                 if (line.startsWith('```')) {
                     inCodeBlock = !inCodeBlock;
                     continue;
                 }
-                // 在代码块内，跳过
                 if (inCodeBlock) {
                     continue;
                 }
                 
-                // 保留所有内容（包括任务行）
                 bodyContent.push(line);
             }
             
-            // 解析标签 - 支持YAML数组和逗号分隔字符串
+            // 解析标签
             let tags = [];
             if (frontmatter.tags) {
-                console.log(`Frontmatter tags for ${filePath}:`, frontmatter.tags, typeof frontmatter.tags);
+                console.log(`Frontmatter tags for ${filePath}:`, frontmatter.tags);
                 if (Array.isArray(frontmatter.tags)) {
                     tags = frontmatter.tags.map(t => t.trim());
-                    console.log(`Parsed tags from array:`, tags);
                 } else if (typeof frontmatter.tags === 'string') {
                     tags = frontmatter.tags.split(',').map(t => t.trim());
-                    console.log(`Parsed tags from string:`, tags);
                 }
-            } else {
-                console.log(`No tags found in frontmatter for ${filePath}. Frontmatter:`, frontmatter);
             }
 
             console.log(`Final parsed tags for ${filePath}:`, tags);
@@ -998,12 +1218,634 @@
             };
         }
 
+        // 切换日历Tab
+        function switchCalendarTab(tab) {
+            currentCalendarTab = tab;
+            
+            // 更新Tab样式
+            document.querySelectorAll('.calendar-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            
+            // 更新日历和右侧列表
+            updateCalendar();
+            renderNotes();
+        }
+
+        // 获取日期的主要类型标签（用于日历颜色）
+        function getDiaryTypeForDate(dateStr) {
+            const notes = diaryNotes.filter(note => note.date && note.date.startsWith(dateStr));
+            const typeCount = {};
+            let maxType = '';
+            let maxCount = 0;
+
+            notes.forEach(note => {
+                note.tags.forEach(tag => {
+                    if (tag.startsWith('type/')) {
+                        const type = tag.split('/')[1];
+                        typeCount[type] = (typeCount[type] || 0) + 1;
+                        if (typeCount[type] > maxCount) {
+                            maxCount = typeCount[type];
+                            maxType = type;
+                        }
+                    }
+                });
+            });
+
+            return maxType;
+        }
+
+        // 更新日历
+        function updateCalendar() {
+            const container = document.getElementById('calendarContainer');
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+
+            // 根据当前Tab获取有数据的日期
+            const datesWithData = {};
+            const dateTypes = {};
+            
+            if (currentCalendarTab === 'diary') {
+                // 日期日历：显示有日记的日期
+                diaryNotes.forEach(note => {
+                    if (note.date) {
+                        const d = note.date.substring(0, 10);
+                        datesWithData[d] = true;
+                        if (!dateTypes[d]) {
+                            dateTypes[d] = getDiaryTypeForDate(d);
+                        }
+                    }
+                });
+            } else if (currentCalendarTab === 'done') {
+                // Done日历：显示有完成任务的日期
+                allTasks.forEach(task => {
+                    if (task.doneDate) {
+                        const d = task.doneDate.substring(0, 10);
+                        datesWithData[d] = true;
+                        dateTypes[d] = 'done';
+                    }
+                });
+            } else if (currentCalendarTab === 'due') {
+                // Due日历：显示有截止日期任务的日期
+                console.log('Building due calendar, total tasks:', allTasks.length);
+                allTasks.forEach(task => {
+                    if (task.dueDate) {
+                        const d = task.dueDate.substring(0, 10);
+                        datesWithData[d] = true;
+                        dateTypes[d] = 'due';
+                        console.log(`Due calendar: added date ${d} from task: ${task.text}`);
+                    }
+                });
+                console.log('Due calendar dates:', Object.keys(datesWithData));
+            } else if (currentCalendarTab === 'scheduled') {
+                // Scheduled日历：显示有计划任务的日期
+                allTasks.forEach(task => {
+                    if (task.scheduledDate) {
+                        const d = task.scheduledDate.substring(0, 10);
+                        datesWithData[d] = true;
+                        dateTypes[d] = 'scheduled';
+                    }
+                });
+            }
+            
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                               '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            
+            let html = '<div class="calendar-header">';
+            html += '<button class="calendar-nav" onclick="prevMonth()">◀</button>';
+            html += '<span class="calendar-title">' + year + '年 ' + monthNames[month] + '</span>';
+            html += '<button class="calendar-nav" onclick="nextMonth()">▶</button>';
+            html += '</div>';
+            
+            html += '<div class="calendar-weekdays">';
+            ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+                html += '<div>' + d + '</div>';
+            });
+            html += '</div>';
+            
+            html += '<div class="calendar-days">';
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            
+            const today = new Date();
+            const todayStr = today.toISOString().substring(0, 10);
+            
+            // 上个月的天数
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = daysInPrevMonth - i;
+                html += '<div class="calendar-day empty other-month">' + day + '</div>';
+            }
+            
+            // 本月的天数
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                const hasNote = datesWithData[dateStr];
+                const isToday = dateStr === todayStr;
+                const isSelected = selectedDate === dateStr;
+                const diaryType = dateTypes[dateStr];
+
+                let classes = 'calendar-day';
+                if (hasNote) {
+                    if (diaryType && diaryType.trim()) {
+                        const typeClass = 'type-' + diaryType.toLowerCase();
+                        classes += ' ' + typeClass;
+                    } else {
+                        classes += ' has-note';
+                    }
+                }
+                if (isToday) classes += ' today';
+                if (isSelected) classes += ' selected';
+
+                html += '<div class="' + classes + '" onclick="selectDate(\'' + dateStr + '\')">' + day + '</div>';
+            }
+            
+            // 下个月的天数
+            const totalCells = firstDay + daysInMonth;
+            const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let i = 1; i <= remainingCells; i++) {
+                html += '<div class="calendar-day empty other-month">' + i + '</div>';
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 上个月
+        function prevMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            updateCalendar();
+        }
+
+        // 下个月
+        function nextMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            updateCalendar();
+        }
+
+        // 选择日期
+        function selectDate(dateStr) {
+            selectedDate = selectedDate === dateStr ? null : dateStr;
+            updateCalendar();
+            
+            if (selectedDate) {
+                // 根据当前Tab筛选数据
+                if (currentCalendarTab === 'diary') {
+                    // 日期日历：筛选该日期的日记
+                    filteredNotes = allNotes.filter(note => {
+                        if (!note.isDiary) return true;
+                        return note.date && note.date.startsWith(selectedDate);
+                    });
+                } else {
+                    // Done/Created/Scheduled日历：显示该日期所有任务的时间线
+                    filteredNotes = [];
+                }
+            } else {
+                filteredNotes = [...allNotes];
+            }
+            
+            filterNotes();
+            renderNotes();
+            
+            if (selectedDate) {
+                setTimeout(() => {
+                    var target = document.querySelector('[data-date^="' + selectedDate + '"]');
+                    if (target) {
+                        smoothScrollTo(target);
+                    }
+                }, 100);
+            }
+        }
+
+        // 平滑滚动
+        function smoothScrollTo(target) {
+            var notesList = document.getElementById('notesList');
+            if (!notesList) return;
+            
+            var startY = notesList.scrollTop;
+            var targetY = target.offsetTop - notesList.offsetTop - 20;
+            var distance = targetY - startY;
+            var duration = Math.min(500, Math.max(200, Math.abs(distance) / 2));
+            var startTime = null;
+            
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                var elapsed = timestamp - startTime;
+                var progress = Math.min(elapsed / duration, 1);
+                var easeProgress = 1 - Math.pow(1 - progress, 3);
+                notesList.scrollTop = startY + distance * easeProgress;
+                
+                if (elapsed < duration) {
+                    requestAnimationFrame(step);
+                }
+            }
+            
+            requestAnimationFrame(step);
+        }
+
+        // 返回列表
+        function backToList() {
+            selectedNoteFilePath = null;
+            filteredNotes = [...allNotes];
+            if (selectedDate) {
+                selectDate(selectedDate);
+            } else {
+                renderNotes();
+            }
+        }
+
+        // 显示笔记详情（对于日记日期md，不显示顶部任务）
+        function showNoteDetail(filePath) {
+            var note = allNotes.find(function(n) { return n.filePath === filePath; });
+            if (!note) return;
+            
+            selectedNoteFilePath = filePath;
+            
+            var notesList = document.getElementById('notesList');
+            var notesTitle = document.getElementById('notesTitle');
+            
+            if (note.isDiary && note.date) {
+                var dateDisplay = new Date(note.date).toLocaleDateString('zh-CN', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+                notesTitle.textContent = dateDisplay;
+            } else {
+                notesTitle.textContent = note.title || filePath.split('/').pop().replace('.md', '');
+            }
+            
+            var fullContent = '';
+            
+            // 添加 meta tags
+            if (note.metaTags && note.metaTags.length > 0) {
+                fullContent += '<div style="margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px;">';
+                note.metaTags.forEach(function(meta) {
+                    fullContent += '<span style="color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">' + 
+                        meta.key + ': <span style="color: var(--text-secondary);">' + meta.value + '</span></span>';
+                });
+                fullContent += '</div>';
+            }
+            
+            // 对于日记日期md，不显示任务部分，直接显示内容
+            // 但在底部添加 Done/Created/Scheduled sections
+            
+            // 添加正文（对于日记，直接显示内容）
+            if (note.body) {
+                fullContent += '<div style="margin-bottom: 20px;">' + renderMarkdownWithTasks(note.body) + '</div>';
+            }
+            
+            // 为日记添加 Done/Created/Scheduled sections
+            if (note.isDiary && note.date) {
+                const dateStr = note.date.substring(0, 10);
+                
+                // Done tasks: tasks with #done/YYYY-MM-DD matching this date
+                const doneTasks = allTasks.filter(task => task.doneDate && task.doneDate.startsWith(dateStr));
+                if (doneTasks.length > 0) {
+                    fullContent += '<div class="task-section done">' +
+                        '<div class="task-section-title">✅ Done (' + doneTasks.length + ')</div>';
+                    doneTasks.forEach(task => {
+                        fullContent += '<div class="task-section-item">' +
+                            '<span class="task-icon">' + getTaskIcon(task.status) + '</span>' +
+                            '<span>' + renderTaskText(task.text) + '</span>' +
+                            '</div>';
+                    });
+                    fullContent += '</div>';
+                }
+                
+                // Due tasks: tasks with 📅 YYYY-MM-DD matching this date
+                const dueTasks = allTasks.filter(task => task.dueDate && task.dueDate.startsWith(dateStr));
+                if (dueTasks.length > 0) {
+                    fullContent += '<div class="task-section due">' +
+                        '<div class="task-section-title">� Due (' + dueTasks.length + ')</div>';
+                    dueTasks.forEach(task => {
+                        fullContent += '<div class="task-section-item">' +
+                            '<span class="task-icon">' + getTaskIcon(task.status) + '</span>' +
+                            '<span>' + renderTaskText(task.text) + '</span>' +
+                            '</div>';
+                    });
+                    fullContent += '</div>';
+                }
+                
+                // Scheduled tasks: tasks with #scheduled/YYYY-MM-DD matching this date
+                const scheduledTasks = allTasks.filter(task => task.scheduledDate && task.scheduledDate.startsWith(dateStr));
+                if (scheduledTasks.length > 0) {
+                    fullContent += '<div class="task-section scheduled">' +
+                        '<div class="task-section-title">📅 Scheduled (' + scheduledTasks.length + ')</div>';
+                    scheduledTasks.forEach(task => {
+                        fullContent += '<div class="task-section-item">' +
+                            '<span class="task-icon">' + getTaskIcon(task.status) + '</span>' +
+                            '<span>' + renderTaskText(task.text) + '</span>' +
+                            '</div>';
+                    });
+                    fullContent += '</div>';
+                }
+            }
+            
+            // 添加标签
+            if (note.tags.length > 0) {
+                fullContent += '<div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">';
+                note.tags.forEach(function(tag) {
+                    var escapedTag = tag.replace(/'/g, "\\'");
+                    fullContent += '<a href="#" onclick="event.stopPropagation(); toggleTag(\'' + escapedTag + '\'); backToList(); return false;" style="color: var(--tag-color); text-decoration: none; font-size: 13px;">#' + tag + '</a>';
+                });
+                fullContent += '</div>';
+            }
+
+            // 添加返回按钮
+            fullContent += '<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">' +
+                '<button onclick="backToList()" style="padding: 8px 16px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer;">返回列表</button>' +
+                '</div>';
+
+            notesList.innerHTML = '<div class="note-item-full" style="max-width: none; cursor: default;">' + fullContent + '</div>';
+
+            notesList.scrollTop = 0;
+        }
+
+        // 显示合并文件夹详情（Bases文件夹下的子文件夹）
+        function showMergedFolderDetail(folderPath) {
+            const folderName = folderPath.split('/').pop();
+
+            const folderNotes = allNotes.filter(note => {
+                const matches = note.filePath.startsWith(folderPath + '/') && !note.isDiary;
+                return matches;
+            });
+
+            if (folderNotes.length === 0) {
+                showMessage('该文件夹下没有笔记', 'error');
+                return;
+            }
+
+            selectedNoteFilePath = '__merged__' + folderPath;
+
+            var notesList = document.getElementById('notesList');
+            var notesTitle = document.getElementById('notesTitle');
+            notesTitle.textContent = folderName + ' (' + folderNotes.length + ' 个文件)';
+
+            var fullContent = '';
+
+            folderNotes.sort((a, b) => a.filePath.localeCompare(b.filePath));
+
+            folderNotes.forEach((note, index) => {
+                const fileName = note.filePath.split('/').pop().replace('.md', '');
+
+                if (index > 0) {
+                    fullContent += '<hr style="border: none; border-top: 2px solid var(--accent-color); margin: 30px 0;">';
+                }
+
+                fullContent += '<div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">';
+                fullContent += '<h3 style="font-size: 20px; font-weight: 600; color: var(--accent-color); margin: 0;">' + fileName + '</h3>';
+                fullContent += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">' + note.filePath + '</div>';
+                fullContent += '</div>';
+
+                if (note.metaTags && note.metaTags.length > 0) {
+                    fullContent += '<div style="margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px;">';
+                    note.metaTags.forEach(function(meta) {
+                        fullContent += '<span style="color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">' +
+                            meta.key + ': <span style="color: var(--text-secondary);">' + meta.value + '</span></span>';
+                    });
+                    fullContent += '</div>';
+                }
+
+                if (note.tasks && note.tasks.length > 0) {
+                    fullContent += '<div style="margin-bottom: 20px;">';
+                    note.tasks.forEach(function(task) {
+                        var icon = getTaskIcon(task.status);
+                        fullContent += '<div style="display: flex; align-items: flex-start; gap: 8px; margin: 8px 0;">' +
+                            '<span style="font-size: 16px;">' + icon + '</span>' +
+                            '<div style="flex: 1;">' +
+                            '<div>' + renderTaskText(task.text) + '</div>';
+
+                        if (task.subItems) {
+                            fullContent += '<div style="margin-top: 4px; padding-left: 12px; font-size: 13px; color: var(--text-secondary);">';
+                            task.subItems.forEach(function(item) {
+                                fullContent += '<div style="margin: 2px 0; white-space: pre-wrap;">' + renderTaskText(item) + '</div>';
+                            });
+                            fullContent += '</div>';
+                        }
+                        fullContent += '</div></div>';
+                    });
+                    fullContent += '</div>';
+                }
+
+                if (note.body) {
+                    fullContent += '<div style="margin-top: 20px;">' + renderMarkdownWithTasks(note.body) + '</div>';
+                }
+
+                if (note.tags.length > 0) {
+                    fullContent += '<div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">';
+                    note.tags.forEach(function(tag) {
+                        var escapedTag = tag.replace(/'/g, "\\'");
+                        fullContent += '<a href="#" onclick="event.stopPropagation(); toggleTag(\'' + escapedTag + '\'); backToList(); return false;" style="color: var(--tag-color); text-decoration: none; font-size: 13px;">#' + tag + '</a>';
+                    });
+                    fullContent += '</div>';
+                }
+            });
+
+            fullContent += '<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">' +
+                '<button onclick="backToList()" style="padding: 8px 16px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer;">返回列表</button>' +
+                '</div>';
+
+            notesList.innerHTML = '<div class="note-item-full" style="max-width: none; cursor: default;">' + fullContent + '</div>';
+
+            notesList.scrollTop = 0;
+        }
+
+        // 更新目录树
+        function updateDirectoryTree() {
+            const container = document.getElementById('directoryTree');
+
+            const tree = {};
+            normalNotes.forEach(note => {
+                const parts = note.filePath.split('/');
+                let current = tree;
+                parts.forEach((part, index) => {
+                    if (index === parts.length - 1) {
+                        if (!current['__files']) current['__files'] = [];
+                        current['__files'].push(note);
+                    } else {
+                        if (!current[part]) current[part] = {};
+                        current = current[part];
+                    }
+                });
+            });
+
+            function renderTree(node, level = 0, parentKey = '') {
+                let html = '';
+                const keys = Object.keys(node).sort();
+                const isBases = parentKey.toLowerCase() === 'bases' || parentKey.toLowerCase().startsWith('bases/');
+
+                keys.forEach(key => {
+                    if (key === '__files') {
+                        if (!isBases) {
+                            node[key].forEach(note => {
+                                const fileName = note.filePath.split('/').pop();
+                                const isSelected = selectedNoteFilePath === note.filePath;
+                                const indent = level * 12 + 8;
+                                html += '<div class="tree-item ' + (isSelected ? 'active' : '') + '" ' +
+                                        'style="padding-left: ' + indent + 'px;" ' +
+                                        'onclick="showNoteDetail(\'' + note.filePath + '\')">' +
+                                        '<span class="tree-icon">📄</span> ' + fileName.replace('.md', '') +
+                                        '</div>';
+                            });
+                        }
+                    } else {
+                        const indent = level * 12 + 8;
+                        const currentPath = parentKey ? parentKey + '/' + key : key;
+
+                        if (parentKey.toLowerCase() === 'bases' || parentKey.toLowerCase().startsWith('bases/')) {
+                            // Bases 下的所有子文件夹都显示为合并视图
+                            const folderNotes = getNotesInFolder(node[key]);
+                            if (folderNotes.length > 0) {
+                                html += '<div class="tree-item ' + (selectedNoteFilePath === '__merged__' + currentPath ? 'active' : '') + '" ' +
+                                        'style="padding-left: ' + indent + 'px;" ' +
+                                        'onclick="showMergedFolderDetail(\'' + currentPath + '\')">' +
+                                        '<span class="tree-icon">📚</span> ' + key +
+                                        '</div>';
+                            }
+                        } else {
+                            html += '<div class="tree-item tree-folder" ' +
+                                    'style="padding-left: ' + indent + 'px;">' +
+                                    '<span class="tree-icon">📁</span> ' + key +
+                                    '</div>';
+                            html += renderTree(node[key], level + 1, currentPath);
+                        }
+                    }
+                });
+                return html;
+            }
+
+            function getNotesInFolder(node) {
+                let notes = [];
+                if (node['__files']) {
+                    notes = notes.concat(node['__files']);
+                }
+                Object.keys(node).forEach(key => {
+                    if (key !== '__files') {
+                        notes = notes.concat(getNotesInFolder(node[key]));
+                    }
+                });
+                return notes;
+            }
+
+            container.innerHTML = renderTree(tree);
+        }
+
+        // 获取任务图标
+        function getTaskIcon(status) {
+            const icons = {
+                'x': '✅',
+                '*': '⭐',
+                '-': '❌',
+                '!': '❗',
+                '/': '🔄',
+                'i': 'ℹ️',
+                '?': '❓',
+                '"': '💬',
+                ' ': '⭕'
+            };
+            return icons[status] || '⭕';
+        }
+
+        // 渲染任务文本
+        function renderTaskText(text) {
+            return text.replace(/#([a-zA-Z0-9/]+)/g, '<a href="#" onclick="event.stopPropagation(); toggleTag(\'$1\'); return false;" style="color: var(--tag-color); text-decoration: none;">#$1</a>');
+        }
+
+        // Markdown 渲染器
+        function renderMarkdownWithTasks(text) {
+            if (!text) return '';
+            
+            let html = text.replace(/```[\s\S]*?```/g, '');
+            
+            const lines = html.split('\n');
+            let result = [];
+            let currentTask = null;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const taskMatch = line.match(/^-\s*\[([ x\-*!\/?i])\]\s*(.+)$/);
+                
+                if (taskMatch) {
+                    if (currentTask) {
+                        result.push(currentTask.html);
+                    }
+                    
+                    const [_, status, taskText] = taskMatch;
+                    const icon = getTaskIcon(status);
+                    currentTask = {
+                        html: `<div style="display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                            <span style="font-size: 16px; flex-shrink: 0;">${icon}</span>
+                            <div style="flex: 1;">${renderTaskText(taskText)}</div>
+                        </div>`,
+                        subItems: []
+                    };
+                } else if (currentTask && (line.match(/^(\t|  )/) || line.trim() === '')) {
+                    if (line.trim()) {
+                        currentTask.subItems.push(line.replace(/^[\t ]+/, ''));
+                    }
+                } else {
+                    if (currentTask) {
+                        let taskHtml = currentTask.html;
+                        if (currentTask.subItems.length > 0) {
+                            taskHtml = taskHtml.replace('</div>', 
+                                `<div style="margin-top: 8px; padding-left: 24px; border-left: 2px solid var(--border-color);">
+                                    ${currentTask.subItems.map(item => `<div style="margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: pre-wrap;">${renderTaskText(item)}</div>`).join('')}
+                                </div></div>`);
+                        }
+                        result.push(taskHtml);
+                        currentTask = null;
+                    }
+                    result.push(line);
+                }
+            }
+            
+            if (currentTask) {
+                let taskHtml = currentTask.html;
+                if (currentTask.subItems.length > 0) {
+                    taskHtml = taskHtml.replace('</div>', 
+                        `<div style="margin-top: 8px; padding-left: 24px; border-left: 2px solid var(--border-color);">
+                            ${currentTask.subItems.map(item => `<div style="margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: pre-wrap;">${renderTaskText(item)}</div>`).join('')}
+                        </div></div>`);
+                }
+                result.push(taskHtml);
+            }
+            
+            html = result.join('\n');
+            
+            html = html.replace(/^###\s+(.+)$/gm, '<h3 style="font-size: 16px; font-weight: 600; margin: 16px 0 8px; color: var(--text-primary);">$1</h3>');
+            html = html.replace(/^##\s+(.+)$/gm, '<h2 style="font-size: 18px; font-weight: 600; margin: 20px 0 10px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">$1</h2>');
+            html = html.replace(/^#\s+(.+)$/gm, '<h1 style="font-size: 20px; font-weight: 600; margin: 24px 0 12px; color: var(--text-primary);">$1</h1>');
+            
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            html = html.replace(/`([^`]+)`/g, '<code style="background: var(--bg-tertiary); padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>');
+            html = html.replace(/#([a-zA-Z0-9/_-]+)/g, '<a href="#" onclick="event.stopPropagation(); toggleTag(\'$1\'); return false;" style="color: var(--tag-color); text-decoration: none;">#$1</a>');
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color: var(--accent-color); text-decoration: none;">$1</a>');
+            html = html.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '<span style="color: var(--accent-color); cursor: pointer;">$2</span>');
+            html = html.replace(/\[\[([^\]]+)\]\]/g, '<span style="color: var(--accent-color); cursor: pointer;">$1</span>');
+            html = html.replace(/^-\s+(.+)$/gm, '<li style="margin: 4px 0; margin-left: 20px;">$1</li>');
+            html = html.replace(/(<li[^>]*>.*<\/li>)/s, '<ul style="margin: 8px 0; padding-left: 20px;">$1</ul>');
+            html = html.replace(/^>\s*\[!(\w+)\]\s*-?\s*(.*)$/gm, '<div style="background: var(--bg-tertiary); border-left: 3px solid var(--accent-color); padding: 12px; margin: 10px 0; border-radius: 4px;"><span style="font-weight: 600; color: var(--accent-color);">$1</span> $2</div>');
+            html = html.replace(/^\[!(\w+)\]\s*-?\s*(.*)$/gm, '<div style="background: var(--bg-tertiary); border-left: 3px solid var(--accent-color); padding: 12px; margin: 10px 0; border-radius: 4px;"><span style="font-weight: 600; color: var(--accent-color);">$1</span> $2</div>');
+            html = html.replace(/^>\s+(.+)$/gm, '<blockquote style="border-left: 3px solid var(--accent-color); padding-left: 12px; margin: 10px 0; color: var(--text-secondary);">$1</blockquote>');
+            html = html.replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">');
+            html = html.replace(/\n\n/g, '</p><p style="margin: 10px 0;">');
+            html = '<p style="margin: 10px 0;">' + html + '</p>';
+            html = html.replace(/<p style="margin: 10px 0;"><\/p>/g, '');
+            
+            return html;
+        }
+
         // 渲染笔记列表
         function renderNotes() {
             const notesList = document.getElementById('notesList');
             const notesTitle = document.getElementById('notesTitle');
             
-            // 分离日记和普通笔记
+            // 如果在Done/Created/Scheduled日历Tab下且有选中日期，显示时间线视图
+            if (currentCalendarTab !== 'diary' && selectedDate) {
+                renderTimelineView();
+                return;
+            }
+            
             const diaryFiltered = filteredNotes.filter(n => n.isDiary);
             const normalFiltered = filteredNotes.filter(n => !n.isDiary);
             
@@ -1020,12 +1862,10 @@
             
             let html = '';
             
-            // 日记部分
             if (diaryFiltered.length > 0) {
                 html += '<div class="notes-section">' +
                         '<h2 class="section-title">📅 日记</h2>';
                 
-                // 按日期排序（倒序，最新的在前）
                 diaryFiltered.sort((a, b) => {
                     if (!a.date && !b.date) return 0;
                     if (!a.date) return 1;
@@ -1040,12 +1880,10 @@
                 html += '</div>';
             }
             
-            // 普通笔记部分
             if (normalFiltered.length > 0) {
                 html += '<div class="notes-section">' +
                         '<h2 class="section-title">📄 普通笔记</h2>';
                 
-                // 按文件路径分组显示
                 const groupedNotes = {};
                 normalFiltered.forEach(note => {
                     const dir = note.filePath.split('/').slice(0, -1).join('/') || '根目录';
@@ -1053,7 +1891,6 @@
                     groupedNotes[dir].push(note);
                 });
                 
-                // 按目录排序
                 Object.keys(groupedNotes).sort().forEach(dir => {
                     html += '<div class="note-group">' +
                             '<h3 class="group-title">' + (dir === '根目录' ? '📁 根目录' : '📁 ' + dir) + '</h3>';
@@ -1070,6 +1907,65 @@
             
             notesList.innerHTML = html;
             notesTitle.textContent = `笔记列表 (${filteredNotes.length})`;
+        }
+
+        // 渲染时间线视图（用于Done/Created/Scheduled日历）
+        function renderTimelineView() {
+            const notesList = document.getElementById('notesList');
+            const notesTitle = document.getElementById('notesTitle');
+            
+            let tasks = [];
+            let tabTitle = '';
+            
+            if (currentCalendarTab === 'done') {
+                tasks = allTasks.filter(task => task.doneDate && task.doneDate.startsWith(selectedDate));
+                tabTitle = 'Done';
+            } else if (currentCalendarTab === 'due') {
+                tasks = allTasks.filter(task => task.dueDate && task.dueDate.startsWith(selectedDate));
+                tabTitle = 'Due';
+            } else if (currentCalendarTab === 'scheduled') {
+                tasks = allTasks.filter(task => task.scheduledDate && task.scheduledDate.startsWith(selectedDate));
+                tabTitle = 'Scheduled';
+            }
+            
+            const dateDisplay = new Date(selectedDate).toLocaleDateString('zh-CN', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            
+            notesTitle.textContent = dateDisplay + ' - ' + tabTitle;
+            
+            if (tasks.length === 0) {
+                notesList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>没有找到${tabTitle}任务</h3>
+                        <p>该日期没有${tabTitle}的任务</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="timeline-container">';
+            html += '<div class="timeline-date-group">';
+            html += '<div class="timeline-date-header">' + dateDisplay + '</div>';
+            html += '<div class="timeline-items">';
+            
+            tasks.forEach(task => {
+                html += '<div class="timeline-item ' + currentCalendarTab + '">';
+                html += '<div style="font-size: 14px;">' + renderTaskText(task.text) + '</div>';
+                html += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">来源: ' + task.notePath + '</div>';
+                if (task.subItems && task.subItems.length > 0) {
+                    html += '<div style="margin-top: 8px; padding-left: 12px; font-size: 13px; color: var(--text-secondary);">';
+                    task.subItems.forEach(item => {
+                        html += '<div style="margin: 2px 0;">' + renderTaskText(item) + '</div>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            
+            html += '</div></div></div>';
+            
+            notesList.innerHTML = html;
         }
 
         // 渲染日记笔记
@@ -1113,753 +2009,85 @@
             `;
         }
 
-        // 获取日期的主要类型标签
-        function getDiaryTypeForDate(dateStr) {
-            const notes = diaryNotes.filter(note => note.date && note.date.startsWith(dateStr));
-            const typeCount = {};
-            let maxType = '';
-            let maxCount = 0;
-
-            console.log(`Checking date ${dateStr}, notes:`, notes);
-
-            notes.forEach(note => {
-                console.log(`Note ${note.filePath} tags:`, note.tags);
-                
-                // 检查 frontmatter 中的标签
-                note.tags.forEach(tag => {
-                    if (tag.startsWith('type/')) {
-                        const type = tag.split('/')[1];
-                        typeCount[type] = (typeCount[type] || 0) + 1;
-                        if (typeCount[type] > maxCount) {
-                            maxCount = typeCount[type];
-                            maxType = type;
-                        }
-                        console.log(`Found type tag in frontmatter: ${tag} -> type: ${type}`);
-                    }
-                });
-                
-                // 检查任务文本中的标签
-                if (note.tasks) {
-                    note.tasks.forEach(task => {
-                        const tagMatches = task.text.match(/#([a-zA-Z0-9\/]+)/g) || [];
-                        tagMatches.forEach(tag => {
-                            if (tag.startsWith('#type/')) {
-                                const type = tag.split('/')[2]; // #type/xxx -> xxx
-                                typeCount[type] = (typeCount[type] || 0) + 1;
-                                if (typeCount[type] > maxCount) {
-                                    maxCount = typeCount[type];
-                                    maxType = type;
-                                }
-                                console.log(`Found type tag in task: ${tag} -> type: ${type}`);
-                            }
-                        });
-                        
-                        // 检查子项中的标签
-                        if (task.subItems) {
-                            task.subItems.forEach(subItem => {
-                                const subTagMatches = subItem.match(/#([a-zA-Z0-9\/]+)/g) || [];
-                                subTagMatches.forEach(tag => {
-                                    if (tag.startsWith('#type/')) {
-                                        const type = tag.split('/')[2];
-                                        typeCount[type] = (typeCount[type] || 0) + 1;
-                                        if (typeCount[type] > maxCount) {
-                                            maxCount = typeCount[type];
-                                            maxType = type;
-                                        }
-                                        console.log(`Found type tag in subtask: ${tag} -> type: ${type}`);
-                                    }
-                                });
-                            });
-                        }
-                    });
-                }
-            });
-
-            console.log(`Type counts for ${dateStr}:`, typeCount, `Max type: ${maxType}`);
-            return maxType;
-        }
-
-        // 更新日历
-        function updateCalendar() {
-            const container = document.getElementById('calendarContainer');
-            const year = currentMonth.getFullYear();
-            const month = currentMonth.getMonth();
-
-            // 获取该月有笔记的日期及其类型
-            const diaryDates = {};
-            const diaryTypes = {};
-            diaryNotes.forEach(note => {
-                if (note.date) {
-                    const d = note.date.substring(0, 10); // YYYY-MM-DD
-                    diaryDates[d] = true;
-                    // 只计算一次类型
-                    if (!diaryTypes[d]) {
-                        diaryTypes[d] = getDiaryTypeForDate(d);
-                    }
-                }
-            });
-            
-            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
-                               '七月', '八月', '九月', '十月', '十一月', '十二月'];
-            
-            let html = '<div class="calendar-header">';
-            html += '<button class="calendar-nav" onclick="prevMonth()">◀</button>';
-            html += '<span class="calendar-title">' + year + '年 ' + monthNames[month] + '</span>';
-            html += '<button class="calendar-nav" onclick="nextMonth()">▶</button>';
-            html += '</div>';
-            
-            html += '<div class="calendar-weekdays">';
-            ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
-                html += '<div>' + d + '</div>';
-            });
-            html += '</div>';
-            
-            html += '<div class="calendar-days">';
-            
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const daysInPrevMonth = new Date(year, month, 0).getDate();
-            
-            const today = new Date();
-            const todayStr = today.toISOString().substring(0, 10);
-            
-            // 上个月的天数
-            for (let i = firstDay - 1; i >= 0; i--) {
-                const day = daysInPrevMonth - i;
-                html += '<div class="calendar-day empty other-month">' + day + '</div>';
-            }
-            
-            // 本月的天数
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-                const hasNote = diaryDates[dateStr];
-                const isToday = dateStr === todayStr;
-                const isSelected = selectedDate === dateStr;
-                const diaryType = diaryTypes[dateStr];
-
-                let classes = 'calendar-day';
-                if (hasNote) {
-                    if (diaryType && diaryType.trim()) {
-                        const typeClass = 'type-' + diaryType.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                        classes += ' ' + typeClass;
-                        console.log(`Date ${dateStr}: adding class ${typeClass} for type ${diaryType}`);
-                    } else {
-                        classes += ' has-note';
-                        console.log(`Date ${dateStr}: no type found, using default`);
-                    }
-                }
-                if (isToday) classes += ' today';
-                if (isSelected) classes += ' selected';
-
-                html += '<div class="' + classes + '" onclick="selectDate(\'' + dateStr + '\')">' + day + '</div>';
-            }
-            
-            // 下个月的天数
-            const totalCells = firstDay + daysInMonth;
-            const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-            for (let i = 1; i <= remainingCells; i++) {
-                html += '<div class="calendar-day empty other-month">' + i + '</div>';
-            }
-            
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        // 上个月
-        function prevMonth() {
-            currentMonth.setMonth(currentMonth.getMonth() - 1);
-            updateCalendar();
-        }
-
-        // 下个月
-        function nextMonth() {
-            currentMonth.setMonth(currentMonth.getMonth() + 1);
-            updateCalendar();
-        }
-
-// 选择日期 - 滚动到该日期的日记
-        function selectDate(dateStr) {
-            selectedDate = selectedDate === dateStr ? null : dateStr;
-            updateCalendar();
-            
-            // 筛选该日期的日记
-            if (selectedDate) {
-                filteredNotes = allNotes.filter(function(note) {
-                    if (!note.isDiary) return true;
-                    return note.date && note.date.startsWith(selectedDate);
-                });
-            } else {
-                filteredNotes = [].concat(allNotes);
-            }
-            
-            filterNotes();
-            renderNotes();
-            
-            // 滚动到该日期的日记（延迟确保DOM已渲染）
-            if (selectedDate) {
-                setTimeout(function() {
-                    var target = document.querySelector('[data-date^="' + selectedDate + '"]');
-                    if (target) {
-                        smoothScrollTo(target);
-                    }
-                }, 100);
-            }
-        }
-
-        // 平滑滚动（渐进式）
-        function smoothScrollTo(target) {
-            var notesList = document.getElementById('notesList');
-            if (!notesList) return;
-            
-            var startY = notesList.scrollTop;
-            var targetY = target.offsetTop - notesList.offsetTop - 20;
-            var distance = targetY - startY;
-            var distanceAbs = Math.abs(distance);
-            var duration = Math.min(500, Math.max(200, distanceAbs / 2)); // 根据距离调整时长
-            var startTime = null;
-            
-            function step(timestamp) {
-                if (!startTime) startTime = timestamp;
-                var elapsed = timestamp - startTime;
-                var progress = Math.min(elapsed / duration, 1);
-                
-                // 缓动函数
-                var easeProgress = 1 - Math.pow(1 - progress, 3);
-                notesList.scrollTop = startY + distance * easeProgress;
-                
-                if (elapsed < duration) {
-                    requestAnimationFrame(step);
-                }
-            }
-            
-            requestAnimationFrame(step);
-        }
-
-        // 返回列表
-        function backToList() {
-            selectedNoteFilePath = null;
-            renderNotes();
-        }
-
-        // 显示笔记详情（全文）
-        function showNoteDetail(filePath) {
-            var note = allNotes.find(function(n) { return n.filePath === filePath; });
-            if (!note) return;
-            
-            selectedNoteFilePath = filePath;
-            
-            var notesList = document.getElementById('notesList');
-            var notesTitle = document.getElementById('notesTitle');
-            
-            if (note.isDiary && note.date) {
-                var dateDisplay = new Date(note.date).toLocaleDateString('zh-CN', {
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                });
-                notesTitle.textContent = dateDisplay;
-            } else {
-                notesTitle.textContent = note.title || filePath.split('/').pop().replace('.md', '');
-            }
-            
-            var fullContent = '';
-            
-// 添加 meta tags
-            if (note.metaTags && note.metaTags.length > 0) {
-                fullContent += '<div style="margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px;">';
-                note.metaTags.forEach(function(meta) {
-                    fullContent += '<span style="color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">' + 
-                        meta.key + ': <span style="color: var(--text-secondary);">' + meta.value + '</span></span>';
-                });
-                fullContent += '</div>';
-            }
-            
-            // 添加任务
-            if (note.tasks && note.tasks.length > 0) {
-                fullContent += '<div style="margin-bottom: 20px;">';
-                note.tasks.forEach(function(task) {
-                    var icon = getTaskIcon(task.status);
-                    fullContent += '<div style="display: flex; align-items: flex-start; gap: 8px; margin: 8px 0;">' +
-                        '<span style="font-size: 16px;">' + icon + '</span>' +
-                        '<div style="flex: 1;">' +
-                        '<div>' + renderTaskText(task.text) + '</div>';
-                    
-                    if (task.subItems) {
-                        fullContent += '<div style="margin-top: 4px; padding-left: 12px; font-size: 13px; color: var(--text-secondary);">';
-                        task.subItems.forEach(function(item) {
-                            fullContent += '<div style="margin: 2px 0; white-space: pre-wrap;">' + renderTaskText(item) + '</div>';
-                        });
-                        fullContent += '</div>';
-                    }
-                    fullContent += '</div></div>';
-                });
-                fullContent += '</div>';
-            }
-            
-            // 添加正文
-            if (note.body) {
-                fullContent += '<div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">' + renderMarkdownWithTasks(note.body) + '</div>';
-            }
-            
-            // 添加标签
-            if (note.tags.length > 0) {
-                fullContent += '<div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">';
-                note.tags.forEach(function(tag) {
-                    var escapedTag = tag.replace(/'/g, "\\'");
-                    fullContent += '<a href="#" onclick="event.stopPropagation(); toggleTag(\'' + escapedTag + '\'); backToList(); return false;" style="color: var(--tag-color); text-decoration: none; font-size: 13px;">#' + tag + '</a>';
-                });
-                fullContent += '</div>';
-            }
-
-            // 添加返回按钮
-            fullContent += '<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">' +
-                '<button onclick="backToList()" style="padding: 8px 16px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer;">返回列表</button>' +
-                '</div>';
-
-            notesList.innerHTML = '<div class="note-item-full" style="max-width: none; cursor: default;">' + fullContent + '</div>';
-
-            // 滚动到顶部
-            notesList.scrollTop = 0;
-        }
-
-        // 显示合并文件夹详情（Bases文件夹下的子文件夹）
-        function showMergedFolderDetail(folderPath) {
-            // 从 folderPath (如 "Bases/Shop") 提取文件夹名
-            const folderName = folderPath.split('/').pop();
-
-            // 找到该文件夹下的所有笔记
-            const folderNotes = allNotes.filter(note => {
-                const matches = note.filePath.startsWith(folderPath + '/') && !note.isDiary;
-                console.log(`Checking ${note.filePath} against ${folderPath}/:`, matches);
-                return matches;
-            });
-
-            console.log(`Folder ${folderPath}: found ${folderNotes.length} notes`);
-
-            if (folderNotes.length === 0) {
-                showMessage('该文件夹下没有笔记', 'error');
-                return;
-            }
-
-            // 设置虚拟文件路径用于返回功能
-            selectedNoteFilePath = '__merged__' + folderPath;
-
-            var notesList = document.getElementById('notesList');
-            var notesTitle = document.getElementById('notesTitle');
-            notesTitle.textContent = folderName + ' (' + folderNotes.length + ' 个文件)';
-
-            var fullContent = '';
-
-            // 按文件名排序
-            folderNotes.sort((a, b) => a.filePath.localeCompare(b.filePath));
-
-            // 合并显示所有笔记
-            folderNotes.forEach((note, index) => {
-                const fileName = note.filePath.split('/').pop().replace('.md', '');
-
-                // 添加分隔线（除了第一个）
-                if (index > 0) {
-                    fullContent += '<hr style="border: none; border-top: 2px solid var(--accent-color); margin: 30px 0;">';
-                }
-
-                // 文件标题
-                fullContent += '<div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">';
-                fullContent += '<h3 style="font-size: 20px; font-weight: 600; color: var(--accent-color); margin: 0;">' + fileName + '</h3>';
-                fullContent += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">' + note.filePath + '</div>';
-                fullContent += '</div>';
-
-                // 添加 meta tags
-                if (note.metaTags && note.metaTags.length > 0) {
-                    fullContent += '<div style="margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px;">';
-                    note.metaTags.forEach(function(meta) {
-                        fullContent += '<span style="color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">' +
-                            meta.key + ': <span style="color: var(--text-secondary);">' + meta.value + '</span></span>';
-                    });
-                    fullContent += '</div>';
-                }
-
-                // 添加任务
-                if (note.tasks && note.tasks.length > 0) {
-                    fullContent += '<div style="margin-bottom: 20px;">';
-                    note.tasks.forEach(function(task) {
-                        var icon = getTaskIcon(task.status);
-                        fullContent += '<div style="display: flex; align-items: flex-start; gap: 8px; margin: 8px 0;">' +
-                            '<span style="font-size: 16px;">' + icon + '</span>' +
-                            '<div style="flex: 1;">' +
-                            '<div>' + renderTaskText(task.text) + '</div>';
-
-                        if (task.subItems) {
-                            fullContent += '<div style="margin-top: 4px; padding-left: 12px; font-size: 13px; color: var(--text-secondary);">';
-                            task.subItems.forEach(function(item) {
-                                fullContent += '<div style="margin: 2px 0; white-space: pre-wrap;">' + renderTaskText(item) + '</div>';
-                            });
-                            fullContent += '</div>';
-                        }
-                        fullContent += '</div></div>';
-                    });
-                    fullContent += '</div>';
-                }
-
-                // 添加正文
-                if (note.body) {
-                    fullContent += '<div style="margin-top: 20px;">' + renderMarkdownWithTasks(note.body) + '</div>';
-                }
-
-                // 添加标签
-                if (note.tags.length > 0) {
-                    fullContent += '<div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">';
-                    note.tags.forEach(function(tag) {
-                        var escapedTag = tag.replace(/'/g, "\\'");
-                        fullContent += '<a href="#" onclick="event.stopPropagation(); toggleTag(\'' + escapedTag + '\'); backToList(); return false;" style="color: var(--tag-color); text-decoration: none; font-size: 13px;">#' + tag + '</a>';
-                    });
-                    fullContent += '</div>';
-                }
-            });
-
-            // 添加返回按钮
-            fullContent += '<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">' +
-                '<button onclick="backToList()" style="padding: 8px 16px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer;">返回列表</button>' +
-                '</div>';
-
-            notesList.innerHTML = '<div class="note-item-full" style="max-width: none; cursor: default;">' + fullContent + '</div>';
-
-            // 滚动到顶部
-            notesList.scrollTop = 0;
-        }
-
-        // 更新目录树
-        function updateDirectoryTree() {
-            const container = document.getElementById('directoryTree');
-
-            // 构建目录结构
-            const tree = {};
-            normalNotes.forEach(note => {
-                const parts = note.filePath.split('/');
-                let current = tree;
-                parts.forEach((part, index) => {
-                    if (index === parts.length - 1) {
-                        // 文件
-                        if (!current['__files']) current['__files'] = [];
-                        current['__files'].push(note);
-                    } else {
-                        // 目录
-                        if (!current[part]) current[part] = {};
-                        current = current[part];
-                    }
-                });
-            });
-
-            function renderTree(node, level = 0, parentKey = '') {
-                let html = '';
-                const keys = Object.keys(node).sort();
-
-                // 检查是否是 Bases 文件夹
-                const isBases = parentKey.toLowerCase() === 'bases' || parentKey.toLowerCase().startsWith('bases/');
-
-                keys.forEach(key => {
-                    if (key === '__files') {
-                        // 渲染文件
-                        // 在 Bases 子文件夹中，不单独显示文件
-                        if (!isBases) {
-                            node[key].forEach(note => {
-                                const fileName = note.filePath.split('/').pop();
-                                const isSelected = selectedNoteFilePath === note.filePath;
-                                const indent = level * 12 + 8;
-                                html += '<div class="tree-item" ' +
-                                        'style="padding-left: ' + indent + 'px;" ' +
-                                        'onclick="showNoteDetail(\'' + note.filePath + '\')">' +
-                                        '<span class="tree-icon">📄</span> ' + fileName.replace('.md', '') +
-                                        '</div>';
-                            });
-                        }
-                    } else {
-                        // 渲染目录
-                        const indent = level * 12 + 8;
-                        const currentPath = parentKey ? parentKey + '/' + key : key;
-
-                        // 检查是否是 Bases 文件夹下的子文件夹（Bases的直接子文件夹）
-                        if (parentKey.toLowerCase() === 'bases') {
-                            // 在 Bases 下，显示合并视图按钮
-                            const folderNotes = getNotesInFolder(node[key]);
-                            if (folderNotes.length > 0) {
-                                html += '<div class="tree-item" ' +
-                                        'style="padding-left: ' + indent + 'px;" ' +
-                                        'onclick="showMergedFolderDetail(\'' + currentPath + '\')">' +
-                                        '<span class="tree-icon">📚</span> ' + key +
-                                        '</div>';
-                            }
-                        } else {
-                            // 普通文件夹或Bases的深层子文件夹
-                            html += '<div class="tree-item tree-folder" ' +
-                                    'style="padding-left: ' + indent + 'px;">' +
-                                    '<span class="tree-icon">📁</span> ' + key +
-                                    '</div>';
-                            html += renderTree(node[key], level + 1, currentPath);
-                        }
-                    }
-                });
-                return html;
-            }
-
-            // 辅助函数：获取文件夹中的所有笔记
-            function getNotesInFolder(node) {
-                let notes = [];
-                if (node['__files']) {
-                    notes = notes.concat(node['__files']);
-                }
-                Object.keys(node).forEach(key => {
-                    if (key !== '__files') {
-                        notes = notes.concat(getNotesInFolder(node[key]));
-                    }
-                });
-                return notes;
-            }
-
-            container.innerHTML = renderTree(tree);
-        }
-
-        // 渲染笔记卡片
-        function renderNoteCard(note) {
-            const dateStr = note.date ? new Date(note.date).toLocaleDateString('zh-CN') : '';
-            
-            // 渲染 YAML meta tags
-            let metaHtml = '';
-            if (note.metaTags && note.metaTags.length > 0) {
-                metaHtml = `<div style="margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px;">
-                    ${note.metaTags.map(meta => `
-                        <span style="color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">
-                            ${meta.key}: <span style="color: var(--text-secondary);">${meta.value}</span>
-                        </span>
-                    `).join('')}
-                </div>`;
-            }
-            
-            // 渲染完整内容（包括任务）
-            let bodyHtml = '';
-            if (note.body) {
-                bodyHtml = `<div style="margin-top: 10px; font-size: 14px; line-height: 1.6;">${renderMarkdownWithTasks(note.body)}</div>`;
-            }
-            
-            // 渲染标签（Obsidian 风格）
-            let tagsHtml = '';
-            if (note.tags.length > 0) {
-                tagsHtml = `<div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                    ${note.tags.map(tag => `<a href="#" onclick="event.stopPropagation(); toggleTag('${tag}'); return false;" style="color: var(--tag-color); text-decoration: none; font-size: 13px;">#${tag}</a>`).join('')}
-                </div>`;
-            }
-            
-            return `
-                <div class="note-item-full" onclick="showNoteDetail('${note.filePath}')">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--accent-color);">
-                        <div style="font-size: 18px; font-weight: 600;">${note.title}</div>
-                        <div style="font-size: 13px; color: var(--text-muted); white-space: nowrap;">
-                            ${dateStr ? `📅 ${dateStr}` : ''}
-                        </div>
-                    </div>
-                    ${metaHtml}
-                    ${bodyHtml}
-                    ${tagsHtml}
-                </div>
-            `;
-        }
-
-        // 获取任务图标
-        function getTaskIcon(status) {
-            const icons = {
-                'x': '✅',
-                '*': '⭐',
-                '-': '❌',
-                '!': '❗',
-                '/': '🔄',
-                'i': 'ℹ️',
-                '?': '❓',
-                '"': '💬',
-                ' ': '⭕'
-            };
-            return icons[status] || '⭕';
-        }
-
-        // 渲染任务文本（处理标签）
-        function renderTaskText(text) {
-            return text.replace(/#([a-zA-Z0-9/]+)/g, '<a href="#" onclick="event.stopPropagation(); toggleTag(\'$1\'); return false;" style="color: var(--tag-color); text-decoration: none;">#$1</a>');
-        }
-
-        // Markdown 渲染器（处理任务）
-        function renderMarkdownWithTasks(text) {
-            if (!text) return '';
-            
-            // 删除代码块
-            let html = text.replace(/```[\s\S]*?```/g, '');
-            
-            // 处理任务行（特殊渲染，包括子项）
-            const lines = html.split('\n');
-            let result = [];
-            let currentTask = null;
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const taskMatch = line.match(/^-\s*\[([ x\-*!\/?i])\]\s*(.+)$/);
-                
-                if (taskMatch) {
-                    // 渲染上一个任务（如果有）
-                    if (currentTask) {
-                        result.push(currentTask.html);
-                    }
-                    
-                    // 开始新任务
-                    const [_, status, taskText] = taskMatch;
-                    const icon = getTaskIcon(status);
-                    currentTask = {
-                        html: `<div style="display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                            <span style="font-size: 16px; flex-shrink: 0;">${icon}</span>
-                            <div style="flex: 1;">${renderTaskText(taskText)}</div>
-                        </div>`,
-                        subItems: []
-                    };
-                } else if (currentTask && (line.match(/^(\t|  )/) || line.trim() === '')) {
-                    // 收集子项
-                    if (line.trim()) {
-                        currentTask.subItems.push(line.replace(/^[\t ]+/, ''));
-                    }
-                } else {
-                    // 渲染当前任务（如果有）
-                    if (currentTask) {
-                        let taskHtml = currentTask.html;
-                        if (currentTask.subItems.length > 0) {
-                            taskHtml = taskHtml.replace('</div>', 
-                                `<div style="margin-top: 8px; padding-left: 24px; border-left: 2px solid var(--border-color);">
-                                    ${currentTask.subItems.map(item => `<div style="margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: pre-wrap;">${renderTaskText(item)}</div>`).join('')}
-                                </div></div>`);
-                        }
-                        result.push(taskHtml);
-                        currentTask = null;
-                    }
-                    result.push(line);
-                }
-            }
-            
-            // 处理最后一个任务
-            if (currentTask) {
-                let taskHtml = currentTask.html;
-                if (currentTask.subItems.length > 0) {
-                    taskHtml = taskHtml.replace('</div>', 
-                        `<div style="margin-top: 8px; padding-left: 24px; border-left: 2px solid var(--border-color);">
-                            ${currentTask.subItems.map(item => `<div style="margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: pre-wrap;">${renderTaskText(item)}</div>`).join('')}
-                        </div></div>`);
-                }
-                result.push(taskHtml);
-            }
-            
-            html = result.join('\n');
-            
-            // 处理标题
-            html = html.replace(/^###\s+(.+)$/gm, '<h3 style="font-size: 16px; font-weight: 600; margin: 16px 0 8px; color: var(--text-primary);">$1</h3>');
-            html = html.replace(/^##\s+(.+)$/gm, '<h2 style="font-size: 18px; font-weight: 600; margin: 20px 0 10px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">$1</h2>');
-            html = html.replace(/^#\s+(.+)$/gm, '<h1 style="font-size: 20px; font-weight: 600; margin: 24px 0 12px; color: var(--text-primary);">$1</h1>');
-            
-            // 处理粗体和斜体
-            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-            
-            // 处理行内代码
-            html = html.replace(/`([^`]+)`/g, '<code style="background: var(--bg-tertiary); padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>');
-            
-            // 处理标签
-            html = html.replace(/#([a-zA-Z0-9/_-]+)/g, '<a href="#" onclick="event.stopPropagation(); toggleTag(\'$1\'); return false;" style="color: var(--tag-color); text-decoration: none;">#$1</a>');
-            
-            // 处理链接
-            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color: var(--accent-color); text-decoration: none;">$1</a>');
-            
-            // 处理内部链接
-            html = html.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '<span style="color: var(--accent-color); cursor: pointer;">$2</span>');
-            html = html.replace(/\[\[([^\]]+)\]\]/g, '<span style="color: var(--accent-color); cursor: pointer;">$1</span>');
-            
-            // 处理列表（非任务）
-            html = html.replace(/^-\s+(.+)$/gm, '<li style="margin: 4px 0; margin-left: 20px;">$1</li>');
-            html = html.replace(/(<li[^>]*>.*<\/li>)/s, '<ul style="margin: 8px 0; padding-left: 20px;">$1</ul>');
-            
-            // 处理 Obsidian callout 语法 > [!type] 或 [!type]
-            html = html.replace(/^>\s*\[!(\w+)\]\s*-?\s*(.*)$/gm, '<div style="background: var(--bg-tertiary); border-left: 3px solid var(--accent-color); padding: 12px; margin: 10px 0; border-radius: 4px;"><span style="font-weight: 600; color: var(--accent-color);">$1</span> $2</div>');
-            html = html.replace(/^\[!(\w+)\]\s*-?\s*(.*)$/gm, '<div style="background: var(--bg-tertiary); border-left: 3px solid var(--accent-color); padding: 12px; margin: 10px 0; border-radius: 4px;"><span style="font-weight: 600; color: var(--accent-color);">$1</span> $2</div>');
-
-            // 处理普通引用块
-            html = html.replace(/^>\s+(.+)$/gm, '<blockquote style="border-left: 3px solid var(--accent-color); padding-left: 12px; margin: 10px 0; color: var(--text-secondary);">$1</blockquote>');
-            
-            // 处理分隔线
-            html = html.replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">');
-            
-            // 处理换行
-            html = html.replace(/\n\n/g, '</p><p style="margin: 10px 0;">');
-            html = '<p style="margin: 10px 0;">' + html + '</p>';
-            html = html.replace(/<p style="margin: 10px 0;"><\/p>/g, '');
-            
-            return html;
-        }
-
         // 筛选笔记
         function filterNotes() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
-            // 获取选中的状态
             const checkedStatuses = [];
             document.querySelectorAll('#statusFilter input[type="checkbox"]:checked').forEach(function(cb) {
                 checkedStatuses.push(cb.value);
             });
             
-            // 如果没有任何状态被选中，显示全部；否则按选中状态筛选
             const hasStatusFilter = checkedStatuses.length > 0 && checkedStatuses.length < 9;
+            const hasTagFilter = selectedTags.size > 0;
+            const hasSearchFilter = searchTerm.length > 0;
             
-            filteredNotes = allNotes.filter(function(note) {
-                // 搜索筛选
-                if (searchTerm) {
-                    const searchInTitle = note.title.toLowerCase().includes(searchTerm);
-                    const searchInBody = note.body && note.body.toLowerCase().includes(searchTerm);
-                    const searchInPath = note.filePath.toLowerCase().includes(searchTerm);
-                    const searchInTasks = note.tasks && note.tasks.some(function(task) { 
-                        return task.text.toLowerCase().includes(searchTerm) || 
-                               (task.subItems && task.subItems.some(function(sub) { return sub.toLowerCase().includes(searchTerm); }));
-                    });
+            // 如果没有任何筛选条件，显示所有笔记
+            if (!hasStatusFilter && !hasTagFilter && !hasSearchFilter) {
+                filteredNotes = [...allNotes];
+            } else {
+                // 按任务筛选，只包含匹配任务的笔记
+                filteredNotes = allNotes.filter(function(note) {
+                    let hasMatchingTask = false;
                     
-                    if (!searchInTitle && !searchInBody && !searchInPath && !searchInTasks) {
-                        return false;
-                    }
-                }
-                
-                // 状态筛选 - 按单个任务行筛选（仅当有状态被取消勾选时）
-                if (hasStatusFilter) {
-                    const hasMatchingStatus = note.tasks && note.tasks.some(function(task) { 
-                        return checkedStatuses.indexOf(task.status) !== -1;
-                    });
-                    if (!hasMatchingStatus) return false;
-                }
-                
-                // 标签筛选 - 按包含该标签的任务行筛选（使用完整标签名匹配）
-                if (selectedTags.size > 0) {
-                    const hasMatchingTag = note.tasks && note.tasks.some(function(task) {
-                        const taskText = task.text || '';
-                        const subItems = task.subItems || [];
-                        
-                        for (const selectedTag of selectedTags) {
-                            // 检查任务文本中是否有这个完整标签
-                            const tagPattern = '#' + selectedTag.replace(/\//g, '\\/');
-                            const regex = new RegExp(tagPattern + '(?=\\/|\\s|$|,)', 'g');
+                    if (note.tasks) {
+                        note.tasks.forEach(function(task) {
+                            let taskMatches = true;
                             
-                            if (regex.test(taskText)) {
-                                return true;
-                            }
-                            // 检查子项中的标签
-                            for (let j = 0; j < subItems.length; j++) {
-                                if (regex.test(subItems[j])) {
-                                    return true;
+                            // 搜索筛选
+                            if (hasSearchFilter) {
+                                const searchInTask = task.text.toLowerCase().includes(searchTerm);
+                                const searchInSubItems = task.subItems && task.subItems.some(function(sub) { 
+                                    return sub.toLowerCase().includes(searchTerm); 
+                                });
+                                if (!searchInTask && !searchInSubItems) {
+                                    taskMatches = false;
                                 }
                             }
-                        }
-                        return false;
-                    });
+                            
+                            // 状态筛选
+                            if (taskMatches && hasStatusFilter) {
+                                if (checkedStatuses.indexOf(task.status) === -1) {
+                                    taskMatches = false;
+                                }
+                            }
+                            
+                            // 标签筛选
+                            if (taskMatches && hasTagFilter) {
+                                let taskHasMatchingTag = false;
+                                const taskText = task.text || '';
+                                const subItems = task.subItems || [];
+                                
+                                for (const selectedTag of selectedTags) {
+                                    const tagPattern = '#' + selectedTag.replace(/\//g, '\\/');
+                                    const regex = new RegExp(tagPattern + '(?=\\/|\\s|$|,)', 'g');
+                                    
+                                    if (regex.test(taskText)) {
+                                        taskHasMatchingTag = true;
+                                        break;
+                                    }
+                                    for (let j = 0; j < subItems.length; j++) {
+                                        if (regex.test(subItems[j])) {
+                                            taskHasMatchingTag = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!taskHasMatchingTag) {
+                                    taskMatches = false;
+                                }
+                            }
+                            
+                            if (taskMatches) {
+                                hasMatchingTask = true;
+                            }
+                        });
+                    }
                     
-                    if (!hasMatchingTag) return false;
-                }
-                
-                return true;
-            });
+                    return hasMatchingTask;
+                });
+            }
             
             renderNotes();
             updateStats();
@@ -1871,22 +2099,19 @@
             document.getElementById('filteredNotes').textContent = filteredNotes.length;
         }
 
-        // 更新标签云 - 按任务行提取标签
+        // 更新标签云
         function updateTagCloud() {
             var tagCount = {};
             
-            // 从每个笔记的任务行中提取标签
             allNotes.forEach(function(note) {
                 if (note.tasks) {
                     note.tasks.forEach(function(task) {
-                        // 提取任务文本中的标签
                         var tagMatches = task.text.match(/#([a-zA-Z0-9\/]+)/g) || [];
                         tagMatches.forEach(function(tag) {
                             var tagName = tag.substring(1);
                             tagCount[tagName] = (tagCount[tagName] || 0) + 1;
                         });
                         
-                        // 提取子项中的标签
                         if (task.subItems) {
                             task.subItems.forEach(function(subItem) {
                                 var subMatches = subItem.match(/#([a-zA-Z0-9\/]+)/g) || [];
@@ -1903,11 +2128,9 @@
             var tagCloud = document.getElementById('tagCloud');
             var allTags = Object.keys(tagCount).sort();
             
-            // 全部选项
             var allActive = selectedTags.size === 0;
             var html = '<div class="tag-pill ' + (allActive ? 'active' : '') + '" onclick="clearAllTags()" style="margin-bottom: 8px; cursor: pointer;">全部</div>';
             
-            // 构建标签层级
             var tagHierarchy = {};
             allTags.forEach(function(tag) {
                 var parts = tag.split('/');
@@ -1924,7 +2147,6 @@
                 }
             });
             
-            // 渲染标签树
             function renderTagTree(node, level) {
                 level = level || 0;
                 var html = '';
@@ -1934,13 +2156,12 @@
                     var isActive = selectedTags.has(tag);
                     var hasChildren = Object.keys(data.children).length > 0;
                     var marginLeft = level * 16;
-                    var fullTagName = tag; // 完整标签名
-                    var countStr = data.count > 0 ? '(' + data.count + ')' : '';
+var countStr = data.count > 0 ? '(' + data.count + ')' : '';
                     
                     html += '<div class="tag-pill ' + (isActive ? 'active' : '') + '" ' +
                             'onclick="toggleTag(\'' + tag.replace(/'/g, "\\'") + '\')" ' +
                             'style="margin-left: ' + marginLeft + 'px; margin-bottom: 2px; display: block; cursor: pointer; text-align: left;">' +
-                            fullTagName + ' ' + countStr + '</div>';
+                            tag + ' ' + countStr + '</div>';
                     
                     if (hasChildren) {
                         html += renderTagTree(data.children, level + 1);
@@ -1971,14 +2192,17 @@
             filterNotes();
         }
 
-        // 刷新笔记
+        // 刷新笔记（带防抖）
         async function refreshNotes() {
+            if (isRefreshing) {
+                console.log('Already refreshing, skipping duplicate call');
+                return;
+            }
+            
             if (directoryHandle) {
                 if (directoryHandle.isSafari) {
-                    // Safari 兼容模式：重新处理已选择的文件
                     await handleSafariFiles(directoryHandle.files);
                 } else {
-                    // 现代浏览器模式：重新加载目录
                     await loadNotes(true);
                 }
             } else {
@@ -1989,7 +2213,7 @@
         // 显示消息
         function showMessage(message, type = 'info') {
             const existing = document.querySelector('.message');
-            if (existing) existing.remove();
+if (existing) existing.remove();
             
             const msg = document.createElement('div');
             msg.className = `message ${type}`;
@@ -2008,7 +2232,7 @@
             localStorage.setItem('theme', next);
         }
 
-        // 暴露函数到全局作用域（供 onclick 调用）
+        // 暴露函数到全局作用域
         window.selectFolder = selectFolder;
         window.toggleDarkMode = toggleDarkMode;
         window.refreshNotes = refreshNotes;
@@ -2022,6 +2246,7 @@
         window.clearAllTags = clearAllTags;
         window.filterNotes = filterNotes;
         window.handleSafariFiles = handleSafariFiles;
+        window.switchCalendarTab = switchCalendarTab;
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -2030,7 +2255,6 @@
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
             
-            // 检测浏览器兼容性
             if (!isFileSystemAccessSupported()) {
                 document.getElementById('browserWarning').style.display = 'block';
                 console.log('Safari/Firefox 兼容模式已启用');
